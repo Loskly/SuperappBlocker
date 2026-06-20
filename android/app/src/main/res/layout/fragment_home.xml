@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+
+    xmlns:tools="http://schemas.android.com/tools"
+
+    android:layout_width="match_parent"
+
+    android:layout_height="match_parent"
+
+    android:background="@android:color/transparent"
+
+    android:fillViewport="true">
+
+
+
+    <LinearLayout
+
+        android:layout_width="match_parent"
+
+        android:layout_height="wrap_content"
+
+        android:orientation="vertical"
+
+        android:padding="16dp">
+
+
+
+        <TextView
+
+            android:layout_width="wrap_content"
+
+            android:layout_height="wrap_content"
+
+            android:text="@string/app_name"
+
+            android:textAppearance="@style/TextAppearance.Appbllocker.Title"
+
+            android:textStyle="bold" />
+
+
+
+        <com.google.android.material.card.MaterialCardView
+
+            android:layout_width="match_parent"
+
+            android:layout_height="wrap_content"
+
+            android:layout_marginTop="16dp"
+
+            app:cardBackgroundColor="@color/surface"
+
+            app:cardCornerRadius="16dp"
+
+            app:cardElevation="0dp"
+
+            app:strokeColor="@color/neon_glow"
+
+            app:strokeWidth="1dp">
+
+
+
+            <LinearLayout
+
+                android:layout_width="match_parent"
+
+                android:layout_height="wrap_content"
+
+                android:orientation="vertical"
+
+                android:padding="16dp">
+
+
+
+                <TextView
+
+                    android:layout_width="wrap_content"
+
+                    android:layout_height="wrap_content"
+
+                    android:text="@string/status_section"
+
+                    android:textAppearance="@style/TextAppearance.Appbllocker.Section" />
+
+
+
+                <TextView
+
+                    android:id="@+id/statusDeviceOwner"
+
+                    android:layout_width="match_parent"
+
+                    android:layout_height="wrap_content"
+
+                    android:layout_marginTop="8dp"
+
+                    android:textColor="@color/on_surface"
+
+                    tools:text="Device Owner: OK" />
+
+
+
+                <TextView
+
+                    android:id="@+id/statusPermissionsSummary"
+
+                    android:layout_width="match_parent"
+
+                    android:layout_height="wrap_content"
+
+                    android:layout_marginTop="4dp"
+
+                    android:textColor="@color/on_surface"
+
+                    tools:text="Разрешения: 3 из 4" />
+
+
+
+                <TextView
+
+                    android:id="@+id/statusService"
+
+                    android:layout_width="match_parent"
+
+                    android:layout_height="wrap_content"
+
+                    android:layout_marginTop="4dp"
+
+                    android:textColor="@color/on_surface"
+
+                    tools:text="Service: running" />
+
+
+
+                <TextView
+
+                    android:id="@+id/pairingCodeText"
+
+                    android:layout_width="match_parent"
+
+                    android:layout_height="wrap_content"
+
+                    android:layout_marginTop="8dp"
+
+                    android:textColor="@color/on_surface_variant"
+
+                    tools:text="Код привязки: ABCD-1234" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+
+
+        <com.google.android.material.button.MaterialButton
+
+            android:id="@+id/btnCheckPermissions"
+
+            android:layout_width="match_parent"
+
+            android:layout_height="wrap_content"
+
+            android:layout_marginTop="16dp"
+
+            android:text="@string/check_permissions" />
+
+
+
+        <TextView
+
+            android:layout_width="wrap_content"
+
+            android:layout_height="wrap_content"
+
+            android:layout_marginTop="24dp"
+
+            android:text="@string/remote_section"
+
+            android:textAppearance="@style/TextAppearance.Appbllocker.Section" />
+
+
+
+        <TextView
+
+            android:layout_width="match_parent"
+
+            android:layout_height="wrap_content"
+
+            android:layout_marginTop="4dp"
+
+            android:text="@string/remote_hint"
+
+            android:textAppearance="?attr/textAppearanceBodySmall"
+
+            android:textColor="@color/on_surface_variant" />
+
+
+
+        <com.google.android.material.button.MaterialButton
+
+            android:id="@+id/btnSync"
+
+            style="@style/Widget.Appbllocker.Button.Outlined"
+
+            android:layout_width="match_parent"
+
+            android:layout_height="wrap_content"
+
+            android:layout_marginTop="8dp"
+
+            android:text="@string/sync_now" />
+
+
+
+    </LinearLayout>
+
+</ScrollView>
+
+

@@ -1,0 +1,1 @@
+# Appbllocker ProGuard rules

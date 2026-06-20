@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="background">#FF000000</color>
+    <color name="surface">#FF0F0F18</color>
+    <color name="surface_variant">#FF181824</color>
+    <color name="on_surface">#FFF5F5FF</color>
+    <color name="on_surface_variant">#FFC8C8DC</color>
+
+    <color name="neon_primary">#FF8AB8C8</color>
+    <color name="neon_secondary">#FFA888C8</color>
+    <color name="neon_tertiary">#FFE07AAA</color>
+    <color name="neon_glow">#558AB8C8</color>
+
+    <color name="button_primary">#FF2E3F4A</color>
+    <color name="button_primary_pressed">#FF3A4F5C</color>
+    <color name="button_on_primary">#FFE8EEF2</color>
+    <color name="button_outlined_stroke">#FF567580</color>
+    <color name="button_outlined_text">#FFB0CCD8</color>
+
+    <color name="block_background">#FF000000</color>
+    <color name="block_accent">#FFE05A7A</color>
+    <color name="block_glow">#66E05A7A</color>
+
+    <color name="chart_1">#FF8AB8C8</color>
+    <color name="chart_2">#FFA888C8</color>
+    <color name="chart_3">#FFE07AAA</color>
+    <color name="chart_4">#FF5CB888</color>
+    <color name="chart_5">#FFD4A832</color>
+    <color name="chart_6">#FF6E8FCC</color>
+</resources>

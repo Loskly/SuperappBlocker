@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+
+
+
+    <style name="Theme.Appbllocker" parent="Theme.Material3.Dark.NoActionBar">
+
+        <item name="colorPrimary">@color/button_primary</item>
+
+        <item name="colorOnPrimary">@color/button_on_primary</item>
+
+        <item name="colorPrimaryContainer">@color/surface_variant</item>
+
+        <item name="colorOnPrimaryContainer">@color/neon_primary</item>
+
+
+
+        <item name="colorSecondary">@color/neon_secondary</item>
+
+        <item name="colorOnSecondary">@color/white</item>
+
+        <item name="colorSecondaryContainer">@color/surface_variant</item>
+
+        <item name="colorOnSecondaryContainer">@color/neon_secondary</item>
+
+
+
+        <item name="colorTertiary">@color/neon_tertiary</item>
+
+        <item name="colorOnTertiary">@color/black</item>
+
+
+
+        <item name="android:colorBackground">@color/background</item>
+
+        <item name="colorSurface">@color/surface</item>
+
+        <item name="colorOnSurface">@color/on_surface</item>
+
+        <item name="colorOnSurfaceVariant">@color/on_surface_variant</item>
+
+        <item name="colorSurfaceVariant">@color/surface_variant</item>
+
+        <item name="colorOutline">@color/neon_glow</item>
+
+        <item name="colorOnBackground">@color/on_surface</item>
+
+
+
+        <item name="android:textColorPrimary">@color/on_surface</item>
+
+        <item name="android:textColorSecondary">@color/on_surface_variant</item>
+
+        <item name="android:textColorTertiary">@color/on_surface_variant</item>
+
+        <item name="android:textColorHint">@color/on_surface_variant</item>
+
+
+
+        <item name="android:statusBarColor">@android:color/transparent</item>
+
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+
+        <item name="android:windowLightStatusBar">false</item>
+
+        <item name="android:windowLightNavigationBar">false</item>
+
+    </style>
+
+
+
+</resources>
+
+

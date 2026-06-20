@@ -1,0 +1,469 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+
+
+
+    <style name="Theme.Appbllocker" parent="Theme.Material3.Dark.NoActionBar">
+
+        <item name="colorPrimary">@color/button_primary</item>
+
+        <item name="colorOnPrimary">@color/button_on_primary</item>
+
+        <item name="colorPrimaryContainer">@color/surface_variant</item>
+
+        <item name="colorOnPrimaryContainer">@color/neon_primary</item>
+
+
+
+        <item name="colorSecondary">@color/neon_secondary</item>
+
+        <item name="colorOnSecondary">@color/white</item>
+
+        <item name="colorSecondaryContainer">@color/surface_variant</item>
+
+        <item name="colorOnSecondaryContainer">@color/neon_secondary</item>
+
+
+
+        <item name="colorTertiary">@color/neon_tertiary</item>
+
+        <item name="colorOnTertiary">@color/black</item>
+
+
+
+        <item name="android:colorBackground">@color/background</item>
+
+        <item name="colorSurface">@color/surface</item>
+
+        <item name="colorOnSurface">@color/on_surface</item>
+
+        <item name="colorOnSurfaceVariant">@color/on_surface_variant</item>
+
+        <item name="colorSurfaceVariant">@color/surface_variant</item>
+
+        <item name="colorOutline">@color/neon_glow</item>
+
+        <item name="colorOnBackground">@color/on_surface</item>
+
+
+
+        <item name="android:textColorPrimary">@color/on_surface</item>
+
+        <item name="android:textColorSecondary">@color/on_surface_variant</item>
+
+        <item name="android:textColorTertiary">@color/on_surface_variant</item>
+
+        <item name="android:textColorHint">@color/on_surface_variant</item>
+
+
+
+        <item name="textAppearanceDisplayLarge">@style/TextAppearance.Appbllocker.DisplayLarge</item>
+
+        <item name="textAppearanceDisplayMedium">@style/TextAppearance.Appbllocker.DisplayMedium</item>
+
+        <item name="textAppearanceDisplaySmall">@style/TextAppearance.Appbllocker.DisplaySmall</item>
+
+        <item name="textAppearanceHeadlineLarge">@style/TextAppearance.Appbllocker.HeadlineLarge</item>
+
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.Appbllocker.HeadlineMedium</item>
+
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.Appbllocker.HeadlineSmall</item>
+
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.Appbllocker.TitleLarge</item>
+
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.Appbllocker.TitleMedium</item>
+
+        <item name="textAppearanceTitleSmall">@style/TextAppearance.Appbllocker.TitleSmall</item>
+
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.Appbllocker.BodyLarge</item>
+
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.Appbllocker.BodyMedium</item>
+
+        <item name="textAppearanceBodySmall">@style/TextAppearance.Appbllocker.BodySmall</item>
+
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.Appbllocker.LabelLarge</item>
+
+        <item name="textAppearanceLabelMedium">@style/TextAppearance.Appbllocker.LabelMedium</item>
+
+        <item name="textAppearanceLabelSmall">@style/TextAppearance.Appbllocker.LabelSmall</item>
+
+
+
+        <item name="android:statusBarColor">@android:color/transparent</item>
+
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+
+        <item name="android:windowLightStatusBar">false</item>
+
+        <item name="android:windowLightNavigationBar">false</item>
+
+
+
+        <item name="materialCardViewStyle">@style/Widget.Appbllocker.Card</item>
+
+        <item name="materialButtonStyle">@style/Widget.Appbllocker.Button</item>
+
+        <item name="switchStyle">@style/Widget.Appbllocker.Switch</item>
+
+        <item name="radioButtonStyle">@style/Widget.Appbllocker.RadioButton</item>
+
+        <item name="textInputStyle">@style/Widget.Appbllocker.TextInputLayout</item>
+
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.Appbllocker.AlertDialog</item>
+
+    </style>
+
+
+
+    <style name="Theme.Appbllocker.BlockOverlay" parent="Theme.Material3.Dark.NoActionBar">
+
+        <item name="android:windowFullscreen">true</item>
+
+        <item name="android:windowShowWallpaper">false</item>
+
+        <item name="android:windowBackground">@drawable/bg_block_overlay</item>
+
+        <item name="android:colorBackground">@color/block_background</item>
+
+        <item name="colorPrimary">@color/neon_primary</item>
+
+        <item name="colorSecondary">@color/neon_secondary</item>
+
+        <item name="colorOnSurface">@color/on_surface</item>
+
+        <item name="colorOnSurfaceVariant">@color/on_surface_variant</item>
+
+        <item name="colorOnBackground">@color/on_surface</item>
+
+        <item name="android:textColorPrimary">@color/on_surface</item>
+
+        <item name="android:textColorSecondary">@color/on_surface_variant</item>
+
+        <item name="android:statusBarColor">@color/block_background</item>
+
+        <item name="android:navigationBarColor">@color/block_background</item>
+
+        <item name="android:windowLightStatusBar">false</item>
+
+        <item name="android:windowLightNavigationBar">false</item>
+
+    </style>
+
+
+
+    <style name="ThemeOverlay.Appbllocker.AlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+
+        <item name="colorSurface">@color/surface</item>
+
+        <item name="colorOnSurface">@color/on_surface</item>
+
+        <item name="colorOnSurfaceVariant">@color/on_surface_variant</item>
+
+        <item name="android:textColorPrimary">@color/on_surface</item>
+
+        <item name="android:textColorSecondary">@color/on_surface_variant</item>
+
+    </style>
+
+
+
+    <style name="TextAppearance.Appbllocker.DisplayLarge" parent="TextAppearance.Material3.DisplayLarge">
+
+        <item name="android:textColor">@color/on_surface</item>
+
+    </style>
+
+
+
+    <style name="TextAppearance.Appbllocker.DisplayMedium" parent="TextAppearance.Material3.DisplayMedium">
+
+        <item name="android:textColor">@color/on_surface</item>
+
+    </style>
+
+
+
+    <style name="TextAppearance.Appbllocker.DisplaySmall" parent="TextAppearance.Material3.DisplaySmall">
+
+        <item name="android:textColor">@color/on_surface</item>
+
+    </style>
+
+
+
+    <style name="TextAppearance.Appbllocker.HeadlineLarge" parent="TextAppearance.Material3.HeadlineLarge">
+
+        <item name="android:textColor">@color/on_surface</item>
+
+    </style>
+
+
+
+    <style name="TextAppearance.Appbllocker.HeadlineMedium" parent="TextAppearance.Material3.HeadlineMedium">
+
+        <item name="android:textColor">@color/on_surface</item>
+
+    </style>
+
+
+
+    <style name="TextAppearance.Appbllocker.HeadlineSmall" parent="TextAppearance.Material3.HeadlineSmall">
+
+        <item name="android:textColor">@color/on_surface</item>
+
+    </style>
+
+
+
+    <style name="TextAppearance.Appbllocker.TitleLarge" parent="TextAppearance.Material3.TitleLarge">
+
+        <item name="android:textColor">@color/on_surface</item>
+
+    </style>
+
+
+
+    <style name="TextAppearance.Appbllocker.TitleMedium" parent="TextAppearance.Material3.TitleMedium">
+
+        <item name="android:textColor">@color/on_surface</item>
+
+    </style>
+
+
+
+    <style name="TextAppearance.Appbllocker.TitleSmall" parent="TextAppearance.Material3.TitleSmall">
+
+        <item name="android:textColor">@color/on_surface</item>
+
+    </style>
+
+
+
+    <style name="TextAppearance.Appbllocker.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
+
+        <item name="android:textColor">@color/on_surface</item>
+
+    </style>
+
+
+
+    <style name="TextAppearance.Appbllocker.BodyMedium" parent="TextAppearance.Material3.BodyMedium">
+
+        <item name="android:textColor">@color/on_surface</item>
+
+    </style>
+
+
+
+    <style name="TextAppearance.Appbllocker.BodySmall" parent="TextAppearance.Material3.BodySmall">
+
+        <item name="android:textColor">@color/on_surface_variant</item>
+
+    </style>
+
+
+
+    <style name="TextAppearance.Appbllocker.LabelLarge" parent="TextAppearance.Material3.LabelLarge">
+
+        <item name="android:textColor">@color/on_surface</item>
+
+    </style>
+
+
+
+    <style name="TextAppearance.Appbllocker.LabelMedium" parent="TextAppearance.Material3.LabelMedium">
+
+        <item name="android:textColor">@color/on_surface_variant</item>
+
+    </style>
+
+
+
+    <style name="TextAppearance.Appbllocker.LabelSmall" parent="TextAppearance.Material3.LabelSmall">
+
+        <item name="android:textColor">@color/on_surface_variant</item>
+
+    </style>
+
+
+
+    <style name="TextAppearance.Appbllocker.BlockHeadline" parent="TextAppearance.Material3.HeadlineLarge">
+
+        <item name="android:textSize">32sp</item>
+
+        <item name="android:textColor">@color/block_accent</item>
+
+        <item name="android:textStyle">bold</item>
+
+        <item name="android:letterSpacing">0.02</item>
+
+    </style>
+
+
+
+    <style name="TextAppearance.Appbllocker.BlockAppName" parent="TextAppearance.Material3.HeadlineMedium">
+
+        <item name="android:textSize">28sp</item>
+
+        <item name="android:textColor">@color/neon_primary</item>
+
+        <item name="android:textStyle">bold</item>
+
+    </style>
+
+
+
+    <style name="TextAppearance.Appbllocker.BlockMessage" parent="TextAppearance.Material3.BodyLarge">
+
+        <item name="android:textSize">20sp</item>
+
+        <item name="android:textColor">@color/on_surface</item>
+
+        <item name="android:lineSpacingExtra">4dp</item>
+
+    </style>
+
+
+
+    <style name="TextAppearance.Appbllocker.BlockReset" parent="TextAppearance.Material3.BodyMedium">
+
+        <item name="android:textSize">18sp</item>
+
+        <item name="android:textColor">@color/neon_secondary</item>
+
+    </style>
+
+
+
+    <style name="Widget.Appbllocker.Card" parent="Widget.Material3.CardView.Elevated">
+
+        <item name="cardBackgroundColor">@color/surface</item>
+
+        <item name="cardCornerRadius">16dp</item>
+
+        <item name="cardElevation">0dp</item>
+
+        <item name="strokeColor">@color/neon_glow</item>
+
+        <item name="strokeWidth">1dp</item>
+
+    </style>
+
+
+
+    <style name="Widget.Appbllocker.Button" parent="Widget.Material3.Button">
+
+        <item name="backgroundTint">@color/button_background</item>
+
+        <item name="android:textColor">@color/button_on_primary</item>
+
+        <item name="cornerRadius">12dp</item>
+
+    </style>
+
+
+
+    <style name="Widget.Appbllocker.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+
+        <item name="strokeColor">@color/button_outlined_stroke</item>
+
+        <item name="android:textColor">@color/button_outlined_text</item>
+
+        <item name="cornerRadius">12dp</item>
+
+    </style>
+
+
+
+    <style name="Widget.Appbllocker.Switch" parent="Widget.Material3.CompoundButton.MaterialSwitch">
+
+        <item name="thumbTint">@color/neon_primary</item>
+
+        <item name="trackTint">@color/surface_variant</item>
+
+    </style>
+
+
+
+    <style name="Widget.Appbllocker.RadioButton" parent="Widget.Material3.CompoundButton.RadioButton">
+
+        <item name="android:textColor">@color/on_surface</item>
+
+        <item name="buttonTint">@color/radio_button_tint</item>
+
+    </style>
+
+
+
+    <style name="Widget.Appbllocker.TextInputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+
+        <item name="boxStrokeColor">@color/text_input_stroke_color</item>
+
+        <item name="hintTextColor">@color/on_surface_variant</item>
+
+        <item name="android:textColorHint">@color/on_surface_variant</item>
+
+        <item name="boxBackgroundColor">@color/surface_variant</item>
+
+        <item name="boxStrokeWidth">1dp</item>
+
+        <item name="boxStrokeWidthFocused">2dp</item>
+
+        <item name="editTextStyle">@style/Widget.Appbllocker.TextInputEditText</item>
+
+    </style>
+
+
+
+    <style name="Widget.Appbllocker.TextInputEditText" parent="Widget.Material3.TextInputEditText.OutlinedBox">
+
+        <item name="android:textColor">@color/on_surface</item>
+
+        <item name="android:textColorHint">@color/on_surface_variant</item>
+
+    </style>
+
+
+
+    <style name="Widget.Appbllocker.Chip" parent="Widget.Material3.Chip.Filter">
+
+        <item name="chipBackgroundColor">@color/chip_background_color</item>
+
+        <item name="android:textColor">@color/chip_text_color</item>
+
+        <item name="chipStrokeColor">@color/neon_glow</item>
+
+        <item name="chipStrokeWidth">1dp</item>
+
+    </style>
+
+
+
+    <style name="Widget.Appbllocker.TextButton" parent="Widget.Material3.Button.TextButton">
+
+        <item name="android:textColor">@color/button_outlined_text</item>
+
+    </style>
+
+
+
+    <style name="TextAppearance.Appbllocker.Title" parent="TextAppearance.Material3.HeadlineMedium">
+
+        <item name="android:textColor">@color/neon_primary</item>
+
+    </style>
+
+
+
+    <style name="TextAppearance.Appbllocker.Section" parent="TextAppearance.Material3.TitleMedium">
+
+        <item name="android:textColor">@color/neon_secondary</item>
+
+    </style>
+
+
+
+</resources>
+
+
