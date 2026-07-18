@@ -6,6 +6,7 @@ import com.ecosentinel.appblocker.data.AppDatabase
 import com.ecosentinel.appblocker.data.entity.PolicyRuleEntity
 import com.ecosentinel.appblocker.engine.BlockMode
 import com.ecosentinel.appblocker.engine.BlockModuleType
+import com.ecosentinel.appblocker.engine.RuleLockMode
 import com.ecosentinel.appblocker.engine.TargetType
 import com.ecosentinel.appblocker.tracker.UsageTracker
 import com.squareup.moshi.Moshi
@@ -15,6 +16,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
 
 class SyncApi(context: Context) {
@@ -49,16 +51,16 @@ class SyncApi(context: Context) {
             }
         )
         val json = moshi.adapter(UsageSyncRequest::class.java).toJson(payload)
-        val request = Request.Builder()
-            .url("${BuildConfig.API_BASE_URL}/api/v1/devices/sync/usage")
+        val request = withDeviceSecret(Request.Builder())
+            .url("${baseUrl()}/api/v1/devices/sync/usage")
             .post(json.toRequestBody(JSON_MEDIA))
             .build()
         client.newCall(request).execute().close()
     }
 
     private fun pullPolicies() {
-        val request = Request.Builder()
-            .url("${BuildConfig.API_BASE_URL}/api/v1/devices/policies?device_token=${tokenStore.getOrCreateDeviceToken()}")
+        val request = withDeviceSecret(Request.Builder())
+            .url("${baseUrl()}/api/v1/devices/policies?deviceToken=${encode(tokenStore.getOrCreateDeviceToken())}")
             .get()
             .build()
         val response = client.newCall(request).execute()
@@ -109,7 +111,13 @@ class SyncApi(context: Context) {
         val blockMode: String? = null,
         val enabled: Boolean,
         val scheduleJson: String?,
-        val metadataJson: String?
+        val metadataJson: String?,
+        val lockMode: String? = null,
+        val lockUntilDayEndMillis: Long? = null,
+        val lockUntilCustomMillis: Long? = null,
+        val lockOnBlockActive: Boolean? = null,
+        val lockDelayMinutes: Int? = null,
+        val lockDelayStartedAtMillis: Long? = null
     ) {
         fun toEntity(): PolicyRuleEntity {
             return PolicyRuleEntity(
@@ -123,12 +131,30 @@ class SyncApi(context: Context) {
                     ?: if (dailyLimitMinutes == null) BlockMode.PERMANENT else BlockMode.TIME_LIMIT,
                 enabled = enabled,
                 scheduleJson = scheduleJson,
-                metadataJson = metadataJson
+                metadataJson = metadataJson,
+                lockMode = lockMode?.let { RuleLockMode.valueOf(it) } ?: RuleLockMode.NORMAL,
+                lockUntilDayEndMillis = lockUntilDayEndMillis,
+                lockUntilCustomMillis = lockUntilCustomMillis,
+                lockOnBlockActive = lockOnBlockActive ?: false,
+                lockDelayMinutes = lockDelayMinutes,
+                lockDelayStartedAtMillis = lockDelayStartedAtMillis
             )
         }
     }
 
     data class SyncResult(val success: Boolean, val message: String)
+
+    private fun baseUrl(): String = tokenStore.getApiBaseUrl(BuildConfig.API_BASE_URL)
+
+    private fun withDeviceSecret(builder: Request.Builder): Request.Builder {
+        val secret = tokenStore.getDeviceSecret()
+        if (!secret.isNullOrBlank()) {
+            builder.addHeader("X-Device-Secret", secret)
+        }
+        return builder
+    }
+
+    private fun encode(value: String): String = URLEncoder.encode(value, Charsets.UTF_8.name())
 
     companion object {
         private val JSON_MEDIA = "application/json".toMediaType()

@@ -47,6 +47,11 @@ class UrlBlocklistStore(context: Context) {
         return builtInHosts.size
     }
 
+    fun getBuiltInDomains(): List<String> {
+        ensureLoaded()
+        return builtInHosts.sorted()
+    }
+
     companion object {
         fun extractHost(url: String): String? {
             val raw = url.trim()

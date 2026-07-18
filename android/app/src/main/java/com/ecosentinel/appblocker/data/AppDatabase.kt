@@ -8,6 +8,7 @@ import androidx.room.TypeConverters
 import com.ecosentinel.appblocker.data.dao.AppGroupDao
 import com.ecosentinel.appblocker.data.dao.CooldownStateDao
 import com.ecosentinel.appblocker.data.dao.FocusSessionDao
+import com.ecosentinel.appblocker.data.dao.FoodEntryDao
 import com.ecosentinel.appblocker.data.dao.OverrideStateDao
 import com.ecosentinel.appblocker.data.dao.PasswordProtectedAppDao
 import com.ecosentinel.appblocker.data.dao.PolicyRuleDao
@@ -19,6 +20,7 @@ import com.ecosentinel.appblocker.data.entity.AppGroupEntity
 import com.ecosentinel.appblocker.data.entity.AppGroupMemberEntity
 import com.ecosentinel.appblocker.data.entity.CooldownStateEntity
 import com.ecosentinel.appblocker.data.entity.FocusSessionEntity
+import com.ecosentinel.appblocker.data.entity.FoodEntryEntity
 import com.ecosentinel.appblocker.data.entity.OverrideStateEntity
 import com.ecosentinel.appblocker.data.entity.PasswordProtectedAppEntity
 import com.ecosentinel.appblocker.data.entity.PolicyRuleEntity
@@ -39,9 +41,10 @@ import com.ecosentinel.appblocker.data.entity.UsageDailyEntity
         SuperAlarmEntity::class,
         AppGroupEntity::class,
         AppGroupMemberEntity::class,
-        TodoEntity::class
+        TodoEntity::class,
+        FoodEntryEntity::class
     ],
-    version = 10,
+    version = 14,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -57,6 +60,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun superAlarmDao(): SuperAlarmDao
     abstract fun appGroupDao(): AppGroupDao
     abstract fun todoDao(): TodoDao
+    abstract fun foodEntryDao(): FoodEntryDao
 
     companion object {
         @Volatile

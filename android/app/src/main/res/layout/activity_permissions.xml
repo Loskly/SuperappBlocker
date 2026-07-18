@@ -50,8 +50,50 @@
             android:layout_marginTop="16dp"
             android:text="@string/setup_all_permissions" />
 
-        <androidx.recyclerview.widget.RecyclerView
+        <com.ecosentinel.appblocker.ui.FullHeightRecyclerView
             android:id="@+id/permissionsRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:nestedScrollingEnabled="false"
+            tools:listitem="@layout/item_permission_check" />
+
+        <TextView
+            android:id="@+id/survivalTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="@string/survival_mode_title"
+            android:textAppearance="@style/TextAppearance.Appbllocker.Section" />
+
+        <TextView
+            android:id="@+id/survivalHint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/survival_mode_hint"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="@color/on_surface_variant" />
+
+        <TextView
+            android:id="@+id/survivalSummary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textStyle="bold"
+            tools:text="@string/survival_mode_ready" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnRunSurvivalCheck"
+            style="@style/Widget.Appbllocker.Button.Outlined"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/survival_run_check" />
+
+        <com.ecosentinel.appblocker.ui.FullHeightRecyclerView
+            android:id="@+id/survivalRecyclerView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"

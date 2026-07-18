@@ -33,6 +33,76 @@
             android:textColor="@color/on_surface_variant"
             tools:text="com.android.chrome" />
 
+        <LinearLayout
+            android:id="@+id/groupAppsSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:orientation="vertical"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/group_apps_hint"
+                android:textAppearance="@style/TextAppearance.Appbllocker.Section" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:hint="@string/search_apps">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/groupAppsSearchInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="text" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <TextView
+                android:id="@+id/groupAppsLoadingText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:text="@string/loading_apps"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="@color/on_surface_variant"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/groupAppsEmptyText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:text="@string/no_apps_found"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="@color/on_surface_variant"
+                android:visibility="gone" />
+
+            <com.ecosentinel.appblocker.ui.FullHeightRecyclerView
+                android:id="@+id/groupAppsRecyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:nestedScrollingEnabled="false"
+                tools:listitem="@layout/item_focus_app_pick" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnToggleGroupAppsList"
+                style="@style/Widget.Appbllocker.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="4dp"
+                android:visibility="gone"
+                tools:text="@string/group_apps_expand"
+                tools:visibility="visible" />
+        </LinearLayout>
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -189,8 +259,130 @@
                     android:id="@+id/cooldownBlockInput"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="number" />
+                android:inputType="number" />
             </com.google.android.material.textfield.TextInputLayout>
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/rule_lock_mode_title"
+            android:textAppearance="@style/TextAppearance.Appbllocker.Section" />
+
+        <RadioGroup
+            android:id="@+id/lockModeGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp">
+
+            <RadioButton
+                android:id="@+id/radioLockNormal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/rule_lock_normal" />
+
+            <RadioButton
+                android:id="@+id/radioLockStrict"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/rule_lock_strict" />
+        </RadioGroup>
+
+        <LinearLayout
+            android:id="@+id/strictOptionsLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="vertical"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/rule_lock_strict_hint"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="@color/on_surface_variant" />
+
+            <CheckBox
+                android:id="@+id/checkLockUntilEndOfDay"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/rule_lock_until_end_of_day" />
+
+            <CheckBox
+                android:id="@+id/checkLockUntilCustomTime"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/rule_lock_until_custom_time" />
+
+            <LinearLayout
+                android:id="@+id/customLockTimeLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="28dp"
+                android:orientation="vertical"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnLockUntilCustomTime"
+                    style="@style/Widget.Appbllocker.Button.Outlined"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/rule_lock_pick_time" />
+
+                <TextView
+                    android:id="@+id/lockUntilCustomPreview"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="@color/neon_primary"
+                    tools:text="До 21:30" />
+            </LinearLayout>
+
+            <CheckBox
+                android:id="@+id/checkLockOnBlockActive"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/rule_lock_on_block_active" />
+
+            <CheckBox
+                android:id="@+id/checkLockDelay"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/rule_lock_delay" />
+
+            <RadioGroup
+                android:id="@+id/lockDelayGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="28dp"
+                android:orientation="horizontal"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <RadioButton
+                    android:id="@+id/radioLockDelay15"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/rule_lock_delay_15" />
+
+                <RadioButton
+                    android:id="@+id/radioLockDelay30"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/rule_lock_delay_30" />
+
+                <RadioButton
+                    android:id="@+id/radioLockDelay60"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/rule_lock_delay_60" />
+            </RadioGroup>
         </LinearLayout>
 
         <LinearLayout

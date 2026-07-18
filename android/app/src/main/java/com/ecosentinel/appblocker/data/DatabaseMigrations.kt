@@ -140,6 +140,60 @@ object DatabaseMigrations {
         }
     }
 
+    val MIGRATION_10_11 = object : Migration(10, 11) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "ALTER TABLE `super_alarms` ADD COLUMN `soundDisplayName` TEXT NOT NULL DEFAULT ''"
+            )
+        }
+    }
+
+    val MIGRATION_11_12 = object : Migration(11, 12) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `food_entries` (
+                    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    `timestamp` INTEGER NOT NULL,
+                    `name` TEXT NOT NULL,
+                    `calories` INTEGER NOT NULL
+                )
+                """.trimIndent()
+            )
+        }
+    }
+
+    val MIGRATION_12_13 = object : Migration(12, 13) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "ALTER TABLE `food_entries` ADD COLUMN `photoPath` TEXT NOT NULL DEFAULT ''"
+            )
+        }
+    }
+
+    val MIGRATION_13_14 = object : Migration(13, 14) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "ALTER TABLE `policy_rules` ADD COLUMN `lockMode` TEXT NOT NULL DEFAULT 'NORMAL'"
+            )
+            db.execSQL(
+                "ALTER TABLE `policy_rules` ADD COLUMN `lockUntilDayEndMillis` INTEGER"
+            )
+            db.execSQL(
+                "ALTER TABLE `policy_rules` ADD COLUMN `lockUntilCustomMillis` INTEGER"
+            )
+            db.execSQL(
+                "ALTER TABLE `policy_rules` ADD COLUMN `lockOnBlockActive` INTEGER NOT NULL DEFAULT 0"
+            )
+            db.execSQL(
+                "ALTER TABLE `policy_rules` ADD COLUMN `lockDelayMinutes` INTEGER"
+            )
+            db.execSQL(
+                "ALTER TABLE `policy_rules` ADD COLUMN `lockDelayStartedAtMillis` INTEGER"
+            )
+        }
+    }
+
     val ALL = arrayOf(
         MIGRATION_3_4,
         MIGRATION_4_5,
@@ -147,6 +201,10 @@ object DatabaseMigrations {
         MIGRATION_6_7,
         MIGRATION_7_8,
         MIGRATION_8_9,
-        MIGRATION_9_10
+        MIGRATION_9_10,
+        MIGRATION_10_11,
+        MIGRATION_11_12,
+        MIGRATION_12_13,
+        MIGRATION_13_14
     )
 }

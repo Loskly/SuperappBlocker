@@ -37,6 +37,7 @@ class SuperAlarmEditDialog : DialogFragment() {
     private var hour: Int = 7
     private var minute: Int = 0
     private var selectedSoundUri: String = ""
+    private var selectedSoundDisplayName: String = ""
 
     private val ringtonePickerLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -44,9 +45,8 @@ class SuperAlarmEditDialog : DialogFragment() {
         if (result.resultCode != Activity.RESULT_OK) {
             return@registerForActivityResult
         }
-        val uri = readPickedRingtoneUri(result.data)
-        selectedSoundUri = uri?.toString().orEmpty()
-        updateSoundUi()
+        val uri = readPickedRingtoneUri(result.data) ?: return@registerForActivityResult
+        applyPickedSound(uri)
     }
 
     private val audioFileLauncher = registerForActivityResult(
@@ -55,9 +55,7 @@ class SuperAlarmEditDialog : DialogFragment() {
         if (uri == null) {
             return@registerForActivityResult
         }
-        AlarmSoundHelper.persistReadPermission(requireContext(), uri)
-        selectedSoundUri = uri.toString()
-        updateSoundUi()
+        applyPickedSound(uri)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -67,6 +65,7 @@ class SuperAlarmEditDialog : DialogFragment() {
         hour = requireArguments().getInt(ARG_HOUR, 7)
         minute = requireArguments().getInt(ARG_MINUTE, 0)
         selectedSoundUri = requireArguments().getString(ARG_SOUND_URI).orEmpty()
+        selectedSoundDisplayName = requireArguments().getString(ARG_SOUND_DISPLAY_NAME).orEmpty()
     }
 
     override fun onCreateView(
@@ -108,6 +107,7 @@ class SuperAlarmEditDialog : DialogFragment() {
         binding.btnPickSound.setOnClickListener { showSoundPickerDialog() }
         binding.btnResetSound.setOnClickListener {
             selectedSoundUri = ""
+            selectedSoundDisplayName = ""
             updateSoundUi()
         }
         binding.btnTry.setOnClickListener { startPreview() }
@@ -127,8 +127,19 @@ class SuperAlarmEditDialog : DialogFragment() {
     }
 
     private fun updateSoundUi() {
-        binding.soundNameText.text = AlarmSoundHelper.displayName(requireContext(), selectedSoundUri)
+        binding.soundNameText.text = AlarmSoundHelper.displayName(
+            requireContext(),
+            selectedSoundUri,
+            selectedSoundDisplayName
+        )
         binding.btnResetSound.isVisible = selectedSoundUri.isNotBlank()
+    }
+
+    private fun applyPickedSound(uri: Uri) {
+        val persisted = AlarmSoundHelper.persistPickedSound(requireContext(), uri)
+        selectedSoundUri = persisted.uri
+        selectedSoundDisplayName = persisted.displayName
+        updateSoundUi()
     }
 
     private fun showSoundPickerDialog() {
@@ -210,6 +221,7 @@ class SuperAlarmEditDialog : DialogFragment() {
 
     private fun buildAlarmEntity(): SuperAlarmEntity {
         val label = binding.labelInput.text?.toString()?.trim().orEmpty()
+        val (soundUri, soundDisplayName) = finalizeSoundForSave()
         return SuperAlarmEntity(
             id = alarmId,
             hour = hour,
@@ -220,8 +232,24 @@ class SuperAlarmEditDialog : DialogFragment() {
             challengeDifficulty = selectedDifficulty(),
             volumePercent = binding.volumeSlider.value.toInt(),
             volumeGuardEnabled = binding.volumeGuardSwitch.isChecked,
-            soundUri = selectedSoundUri
+            soundUri = soundUri,
+            soundDisplayName = soundDisplayName
         )
+    }
+
+    private fun finalizeSoundForSave(): Pair<String, String> {
+        if (selectedSoundUri.isBlank()) {
+            return "" to ""
+        }
+        val parsed = Uri.parse(selectedSoundUri)
+        if (parsed.scheme == "file") {
+            val name = selectedSoundDisplayName.ifBlank {
+                AlarmSoundHelper.displayName(requireContext(), selectedSoundUri, null)
+            }
+            return selectedSoundUri to name
+        }
+        val persisted = AlarmSoundHelper.persistPickedSound(requireContext(), parsed)
+        return persisted.uri to persisted.displayName
     }
 
     override fun onDestroyView() {
@@ -239,6 +267,7 @@ class SuperAlarmEditDialog : DialogFragment() {
         private const val ARG_VOLUME = "volume"
         private const val ARG_VOLUME_GUARD = "volume_guard"
         private const val ARG_SOUND_URI = "sound_uri"
+        private const val ARG_SOUND_DISPLAY_NAME = "sound_display_name"
 
         fun newInstance(alarm: SuperAlarmEntity? = null): SuperAlarmEditDialog {
             return SuperAlarmEditDialog().apply {
@@ -253,12 +282,14 @@ class SuperAlarmEditDialog : DialogFragment() {
                         putInt(ARG_VOLUME, alarm.volumePercent)
                         putBoolean(ARG_VOLUME_GUARD, alarm.volumeGuardEnabled)
                         putString(ARG_SOUND_URI, alarm.soundUri)
+                        putString(ARG_SOUND_DISPLAY_NAME, alarm.soundDisplayName)
                     } else {
                         putInt(ARG_REPEAT_MASK, AlarmRepeatDays.WEEKDAYS)
                         putString(ARG_DIFFICULTY, AlarmChallengeDifficulty.MEDIUM.name)
                         putInt(ARG_VOLUME, 100)
                         putBoolean(ARG_VOLUME_GUARD, true)
                         putString(ARG_SOUND_URI, "")
+                        putString(ARG_SOUND_DISPLAY_NAME, "")
                     }
                 }
             }

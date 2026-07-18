@@ -3,6 +3,7 @@ package com.ecosentinel.appblocker.data
 import androidx.room.TypeConverter
 import com.ecosentinel.appblocker.engine.BlockMode
 import com.ecosentinel.appblocker.engine.BlockModuleType
+import com.ecosentinel.appblocker.engine.RuleLockMode
 import com.ecosentinel.appblocker.engine.TargetType
 import com.ecosentinel.appblocker.alarm.AlarmChallengeDifficulty
 import com.ecosentinel.appblocker.focus.FocusMode
@@ -25,6 +26,12 @@ class Converters {
 
     @TypeConverter
     fun toBlockMode(value: String): BlockMode = BlockMode.valueOf(value)
+
+    @TypeConverter
+    fun fromRuleLockMode(value: RuleLockMode): String = value.name
+
+    @TypeConverter
+    fun toRuleLockMode(value: String): RuleLockMode = RuleLockMode.valueOf(value)
 
     @TypeConverter
     fun fromFocusMode(value: FocusMode): String = value.name

@@ -6,7 +6,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.ecosentinel.appblocker.databinding.ItemUsageBinding
-import java.util.concurrent.TimeUnit
+import com.ecosentinel.appblocker.tracker.UsageTracker
 
 data class UsageRow(
     val packageName: String,
@@ -30,8 +30,8 @@ class UsageAdapter : ListAdapter<UsageRow, UsageAdapter.ViewHolder>(Diff) {
     class ViewHolder(private val binding: ItemUsageBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(row: UsageRow) {
             binding.appNameText.text = row.appLabel
-            val usedMinutes = TimeUnit.MILLISECONDS.toMinutes(row.usedMillis)
-            val limitText = row.limitMinutes?.let { "$usedMinutes / $it мин" } ?: "$usedMinutes мин"
+            val usedText = UsageTracker.formatDurationStatic(row.usedMillis)
+            val limitText = row.limitMinutes?.let { "$usedText / $it мин" } ?: usedText
             binding.usageText.text = limitText
             binding.limitText.text = row.limitMinutes?.let { "Лимит: $it мин/день" } ?: "Лимит не задан"
         }

@@ -17,6 +17,10 @@
         android:icon="@drawable/ic_nav_todo"
         android:title="@string/nav_todo" />
     <item
+        android:id="@+id/nav_calories"
+        android:icon="@drawable/ic_nav_calories"
+        android:title="@string/nav_calories" />
+    <item
         android:id="@+id/nav_features"
         android:icon="@drawable/ic_nav_features"
         android:title="@string/nav_features" />

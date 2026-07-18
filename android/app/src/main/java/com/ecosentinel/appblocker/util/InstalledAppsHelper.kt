@@ -16,6 +16,9 @@ data class InstalledApp(
 
 object InstalledAppsHelper {
 
+    @Volatile
+    private var cachedLauncherPackages: Set<String>? = null
+
     private val blockedPackagePrefixes = listOf(
         "com.android.providers.",
         "com.android.server.",
@@ -140,6 +143,45 @@ object InstalledAppsHelper {
             context.packageManager.defaultActivityIcon
         }
 
+    /**
+     * Packages that should never appear in usage stats (providers, System UI shell, etc.).
+     */
+    fun isBlockedStatsPackage(packageName: String): Boolean = isBlockedPackage(packageName)
+
+    /**
+     * Hidden from stats by default: blocked components and non-launcher preinstalled system apps.
+     * User-facing system apps (Settings, Phone, updated Chrome/YouTube) remain visible.
+     */
+    fun isHiddenFromStatsByDefault(context: Context, packageName: String): Boolean {
+        if (isBlockedPackage(packageName)) {
+            return true
+        }
+        return try {
+            val pm = context.packageManager
+            val appInfo = getApplicationInfo(pm, packageName)
+            if (isUserInstalledApp(appInfo)) {
+                return false
+            }
+            if (isUpdatedSystemApp(appInfo)) {
+                return false
+            }
+            !getLaunchablePackageNamesCached(context, pm).contains(packageName)
+        } catch (_: PackageManager.NameNotFoundException) {
+            false
+        }
+    }
+
+    fun shouldShowInStats(
+        context: Context,
+        packageName: String,
+        includeHiddenSystemComponents: Boolean
+    ): Boolean {
+        if (includeHiddenSystemComponents) {
+            return true
+        }
+        return !isHiddenFromStatsByDefault(context, packageName)
+    }
+
     private fun isSelectableApp(appInfo: ApplicationInfo, launcherPackages: Set<String>): Boolean {
         if (isUserInstalledApp(appInfo)) {
             return true
@@ -217,6 +259,11 @@ object InstalledAppsHelper {
             @Suppress("DEPRECATION")
             pm.getInstalledApplications(0)
         }
+    }
+
+    private fun getLaunchablePackageNamesCached(context: Context, pm: PackageManager): Set<String> {
+        cachedLauncherPackages?.let { return it }
+        return getLaunchablePackageNames(context, pm).also { cachedLauncherPackages = it }
     }
 
     private fun getLaunchablePackageNames(context: Context, pm: PackageManager): Set<String> {

@@ -30,7 +30,7 @@ object AppCategoryHelper {
         categoryId: String
     ): Long {
         return usageByPackage.entries.sumOf { (packageName, millis) ->
-            if (millis <= 0L || packageName == context.packageName) {
+            if (millis <= 0L) {
                 0L
             } else if (belongsToCategory(context, packageName, categoryId)) {
                 millis
@@ -40,7 +40,7 @@ object AppCategoryHelper {
         }
     }
 
-    fun isSystemApp(context: Context, packageName: String): Boolean {
+    fun isPreinstalledSystemApp(context: Context, packageName: String): Boolean {
         return try {
             val pm = context.packageManager
             val appInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -56,16 +56,53 @@ object AppCategoryHelper {
         }
     }
 
-    fun groupByCategory(
+    fun filterUsageForDisplay(
+        context: Context,
+        usageByPackage: Map<String, Long>,
+        includeHiddenSystemComponents: Boolean
+    ): Map<String, Long> {
+        return usageByPackage.filter { (packageName, millis) ->
+            millis > 0L &&
+                InstalledAppsHelper.shouldShowInStats(context, packageName, includeHiddenSystemComponents)
+        }
+    }
+
+    fun hiddenSystemUsageMillis(
         context: Context,
         usageByPackage: Map<String, Long>
+    ): Long {
+        return usageByPackage.entries.sumOf { (packageName, millis) ->
+            if (millis <= 0L) {
+                0L
+            } else if (InstalledAppsHelper.isHiddenFromStatsByDefault(context, packageName)) {
+                millis
+            } else {
+                0L
+            }
+        }
+    }
+
+    fun groupByCategory(
+        context: Context,
+        usageByPackage: Map<String, Long>,
+        includeHiddenSystemComponents: Boolean = false,
+        hiddenSystemCategoryName: String = "Системные компоненты"
     ): List<CategoryUsage> {
         val grouped = linkedMapOf<String, Long>()
         usageByPackage.forEach { (packageName, millis) ->
             if (millis <= 0L) return@forEach
-            if (packageName == context.packageName) return@forEach
+            if (!InstalledAppsHelper.shouldShowInStats(context, packageName, includeHiddenSystemComponents)) {
+                return@forEach
+            }
             val category = categoryName(context, packageName)
             grouped[category] = (grouped[category] ?: 0L) + millis
+        }
+        if (!includeHiddenSystemComponents) {
+            val hiddenMillis = hiddenSystemUsageMillis(context, usageByPackage)
+            if (hiddenMillis > 0L) {
+                grouped[hiddenSystemCategoryName] =
+                    (grouped[hiddenSystemCategoryName] ?: 0L) + hiddenMillis
+            }
         }
         return grouped.entries
             .map { CategoryUsage(it.key, it.value) }
@@ -75,20 +112,21 @@ object AppCategoryHelper {
     fun toAppDetails(
         context: Context,
         usageByPackage: Map<String, Long>,
-        includeSystemApps: Boolean
+        includeHiddenSystemComponents: Boolean
     ): List<AppUsageDetail> {
-        val filtered = usageByPackage.filter { (pkg, ms) ->
-            ms > 0L && pkg != context.packageName &&
-                (includeSystemApps || !isSystemApp(context, pkg))
-        }
-        val total = filtered.values.sum().coerceAtLeast(1L)
+        val filtered = filterUsageForDisplay(context, usageByPackage, includeHiddenSystemComponents)
+        // Share is relative to the apps actually shown, so the visible rows add up to ~100% and the
+        // top app's progress bar reflects its weight among them (rather than being diluted by the
+        // hidden/system time the user isn't looking at).
+        val visibleTotal = filtered.values.sum().coerceAtLeast(1L)
         return filtered.map { (pkg, ms) ->
             AppUsageDetail(
                 packageName = pkg,
                 label = InstalledAppsHelper.getAppLabel(context, pkg),
                 usedMillis = ms,
-                shareOfTotal = ms.toFloat() / total.toFloat(),
-                isSystemApp = isSystemApp(context, pkg)
+                shareOfTotal = ms.toFloat() / visibleTotal.toFloat(),
+                isSystemApp = isPreinstalledSystemApp(context, pkg) ||
+                    InstalledAppsHelper.isHiddenFromStatsByDefault(context, pkg)
             )
         }.sortedByDescending { it.usedMillis }
     }

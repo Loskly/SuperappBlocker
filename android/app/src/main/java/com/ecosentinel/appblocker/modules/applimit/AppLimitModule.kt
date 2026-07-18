@@ -13,6 +13,7 @@ import com.ecosentinel.appblocker.engine.BlockModule
 import com.ecosentinel.appblocker.engine.BlockModuleType
 import com.ecosentinel.appblocker.engine.CooldownSettings
 import com.ecosentinel.appblocker.engine.PolicyRuleIds
+import com.ecosentinel.appblocker.engine.RuleLockConfig
 import com.ecosentinel.appblocker.engine.TargetType
 import com.ecosentinel.appblocker.tracker.AppCategoryHelper
 import com.ecosentinel.appblocker.tracker.AppGroupHelper
@@ -127,7 +128,8 @@ class AppLimitModule(private val context: Context) : BlockModule {
             dailyLimitMinutes: Int? = null,
             schedule: BlockSchedule? = null,
             cooldownSettings: CooldownSettings? = null,
-            enabled: Boolean = true
+            enabled: Boolean = true,
+            lockConfig: RuleLockConfig = RuleLockConfig.NORMAL
         ): PolicyRuleEntity {
             return PolicyRuleEntity(
                 id = PolicyRuleIds.forApp(packageName, blockMode),
@@ -139,7 +141,13 @@ class AppLimitModule(private val context: Context) : BlockModule {
                 blockMode = blockMode,
                 enabled = enabled,
                 scheduleJson = if (blockMode == BlockMode.TIME_OF_DAY) schedule?.toJson() else null,
-                metadataJson = if (blockMode == BlockMode.COOLDOWN) cooldownSettings?.toJson() else null
+                metadataJson = if (blockMode == BlockMode.COOLDOWN) cooldownSettings?.toJson() else null,
+                lockMode = lockConfig.mode,
+                lockUntilDayEndMillis = lockConfig.untilDayEndMillis,
+                lockUntilCustomMillis = lockConfig.untilCustomMillis,
+                lockOnBlockActive = lockConfig.onBlockActive,
+                lockDelayMinutes = lockConfig.delayMinutes,
+                lockDelayStartedAtMillis = lockConfig.delayStartedAtMillis
             )
         }
 
@@ -149,7 +157,8 @@ class AppLimitModule(private val context: Context) : BlockModule {
             dailyLimitMinutes: Int? = null,
             schedule: BlockSchedule? = null,
             cooldownSettings: CooldownSettings? = null,
-            enabled: Boolean = true
+            enabled: Boolean = true,
+            lockConfig: RuleLockConfig = RuleLockConfig.NORMAL
         ): PolicyRuleEntity {
             return PolicyRuleEntity(
                 id = PolicyRuleIds.forCategory(categoryId, blockMode),
@@ -161,7 +170,13 @@ class AppLimitModule(private val context: Context) : BlockModule {
                 blockMode = blockMode,
                 enabled = enabled,
                 scheduleJson = if (blockMode == BlockMode.TIME_OF_DAY) schedule?.toJson() else null,
-                metadataJson = if (blockMode == BlockMode.COOLDOWN) cooldownSettings?.toJson() else null
+                metadataJson = if (blockMode == BlockMode.COOLDOWN) cooldownSettings?.toJson() else null,
+                lockMode = lockConfig.mode,
+                lockUntilDayEndMillis = lockConfig.untilDayEndMillis,
+                lockUntilCustomMillis = lockConfig.untilCustomMillis,
+                lockOnBlockActive = lockConfig.onBlockActive,
+                lockDelayMinutes = lockConfig.delayMinutes,
+                lockDelayStartedAtMillis = lockConfig.delayStartedAtMillis
             )
         }
 
@@ -171,7 +186,8 @@ class AppLimitModule(private val context: Context) : BlockModule {
             dailyLimitMinutes: Int? = null,
             schedule: BlockSchedule? = null,
             cooldownSettings: CooldownSettings? = null,
-            enabled: Boolean = true
+            enabled: Boolean = true,
+            lockConfig: RuleLockConfig = RuleLockConfig.NORMAL
         ): PolicyRuleEntity {
             return PolicyRuleEntity(
                 id = PolicyRuleIds.forCustomGroup(groupId, blockMode),
@@ -183,7 +199,13 @@ class AppLimitModule(private val context: Context) : BlockModule {
                 blockMode = blockMode,
                 enabled = enabled,
                 scheduleJson = if (blockMode == BlockMode.TIME_OF_DAY) schedule?.toJson() else null,
-                metadataJson = if (blockMode == BlockMode.COOLDOWN) cooldownSettings?.toJson() else null
+                metadataJson = if (blockMode == BlockMode.COOLDOWN) cooldownSettings?.toJson() else null,
+                lockMode = lockConfig.mode,
+                lockUntilDayEndMillis = lockConfig.untilDayEndMillis,
+                lockUntilCustomMillis = lockConfig.untilCustomMillis,
+                lockOnBlockActive = lockConfig.onBlockActive,
+                lockDelayMinutes = lockConfig.delayMinutes,
+                lockDelayStartedAtMillis = lockConfig.delayStartedAtMillis
             )
         }
 
@@ -191,7 +213,8 @@ class AppLimitModule(private val context: Context) : BlockModule {
             domain: String,
             blockMode: BlockMode,
             schedule: BlockSchedule? = null,
-            enabled: Boolean = true
+            enabled: Boolean = true,
+            lockConfig: RuleLockConfig = RuleLockConfig.NORMAL
         ): PolicyRuleEntity {
             return PolicyRuleEntity(
                 id = PolicyRuleIds.forWebsite(domain, blockMode),
@@ -203,7 +226,13 @@ class AppLimitModule(private val context: Context) : BlockModule {
                 blockMode = blockMode,
                 enabled = enabled,
                 scheduleJson = if (blockMode == BlockMode.TIME_OF_DAY) schedule?.toJson() else null,
-                metadataJson = null
+                metadataJson = null,
+                lockMode = lockConfig.mode,
+                lockUntilDayEndMillis = lockConfig.untilDayEndMillis,
+                lockUntilCustomMillis = lockConfig.untilCustomMillis,
+                lockOnBlockActive = lockConfig.onBlockActive,
+                lockDelayMinutes = lockConfig.delayMinutes,
+                lockDelayStartedAtMillis = lockConfig.delayStartedAtMillis
             )
         }
     }

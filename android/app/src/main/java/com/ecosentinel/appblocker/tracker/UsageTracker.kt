@@ -3,14 +3,13 @@ package com.ecosentinel.appblocker.tracker
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.Context
+import com.ecosentinel.appblocker.R
 import com.ecosentinel.appblocker.data.AppDatabase
 import com.ecosentinel.appblocker.data.entity.UsageDailyEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
-import java.util.TimeZone
 import java.util.concurrent.TimeUnit
 
 class UsageTracker(private val context: Context) {
@@ -18,76 +17,38 @@ class UsageTracker(private val context: Context) {
     private val usageStatsManager =
         context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
     private val database = AppDatabase.getInstance(context)
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-    private val dayLabelFormat = SimpleDateFormat("EEE", Locale("ru"))
-    private val displayDateFormat = SimpleDateFormat("d MMMM yyyy", Locale("ru"))
-    private val utcTimeZone = TimeZone.getTimeZone("UTC")
 
-    fun todayKey(): String = dateKeyForOffset(0)
+    fun todayKey(): String = DateKeys.today()
 
     fun isToday(dateKey: String): Boolean = dateKey == todayKey()
 
-    fun minSelectableDateKey(): String {
-        val calendar = Calendar.getInstance().apply {
-            add(Calendar.MONTH, -1)
-        }
-        return dateFormat.format(calendar.time)
-    }
+    fun minSelectableDateKey(): String = DateKeys.minSelectable()
 
     fun dateKeyToPickerUtcMillis(dateKey: String): Long {
-        val local = calendarForDateKey(dateKey) ?: return pickerUtcMillisForToday()
-        val utc = Calendar.getInstance(utcTimeZone).apply {
-            set(Calendar.YEAR, local.get(Calendar.YEAR))
-            set(Calendar.MONTH, local.get(Calendar.MONTH))
-            set(Calendar.DAY_OF_MONTH, local.get(Calendar.DAY_OF_MONTH))
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-        return utc.timeInMillis
+        return DateKeys.toPickerUtcMillis(dateKey) ?: dateKeyToPickerUtcMillis(todayKey())
     }
 
-    fun pickerUtcMillisToDateKey(utcMillis: Long): String {
-        val utc = Calendar.getInstance(utcTimeZone).apply {
-            timeInMillis = utcMillis
-        }
-        return String.format(
-            Locale.US,
-            "%04d-%02d-%02d",
-            utc.get(Calendar.YEAR),
-            utc.get(Calendar.MONTH) + 1,
-            utc.get(Calendar.DAY_OF_MONTH)
-        )
-    }
+    fun pickerUtcMillisToDateKey(utcMillis: Long): String = DateKeys.fromPickerUtcMillis(utcMillis)
+
+    fun resolveDateKeyFromPicker(utcMillis: Long): String = DateKeys.resolveFromPicker(utcMillis)
 
     fun formatDisplayDate(dateKey: String): String {
         if (isToday(dateKey)) {
             return "Сегодня"
         }
-        val calendar = calendarForDateKey(dateKey) ?: return dateKey
-        return displayDateFormat.format(calendar.time)
+        return DateKeys.formatDisplay(dateKey)
     }
 
     fun formatSectionDate(dateKey: String): String {
         if (isToday(dateKey)) {
             return "сегодня"
         }
-        val calendar = calendarForDateKey(dateKey) ?: return dateKey
-        return displayDateFormat.format(calendar.time)
+        return DateKeys.formatDisplay(dateKey)
     }
 
-    fun dateKeyForOffset(daysAgo: Int): String {
-        val calendar = Calendar.getInstance().apply {
-            add(Calendar.DAY_OF_YEAR, -daysAgo)
-        }
-        return dateFormat.format(calendar.time)
-    }
+    fun dateKeyForOffset(daysAgo: Int): String = DateKeys.offset(daysAgo)
 
-    fun dayLabel(dateKey: String): String {
-        val calendar = calendarForDateKey(dateKey) ?: return dateKey
-        return dayLabelFormat.format(calendar.time)
-    }
+    fun dayLabel(dateKey: String): String = DateKeys.dayLabel(dateKey)
 
     suspend fun syncTodayUsage(): Map<String, Long> = withContext(Dispatchers.IO) {
         syncDay(dateKeyForOffset(0))
@@ -113,18 +74,26 @@ class UsageTracker(private val context: Context) {
         syncRecentHistory(days)
     }
 
-    fun calendarWeekStartDateKey(forDateKey: String = todayKey()): String {
-        val calendar = calendarForDateKey(forDateKey) ?: return forDateKey
-        val daysFromMonday = (calendar.get(Calendar.DAY_OF_WEEK) + 5) % 7
-        calendar.add(Calendar.DAY_OF_YEAR, -daysFromMonday)
-        return dateFormat.format(calendar.time)
+    /**
+     * Single definition of "daily average" shared by the Stats screen and the weekly report so the
+     * two never disagree. Averages only the COMPLETED days, like Digital Wellbeing, so the
+     * still-in-progress current day does not drag the figure down. Falls back to including today
+     * when it is the only day available.
+     */
+    fun dailyAverageMillis(summaries: List<DailyUsageSummary>): Long {
+        if (summaries.isEmpty()) {
+            return 0L
+        }
+        val completed = summaries.filterNot { isToday(it.dateKey) }
+        val basis = completed.ifEmpty { summaries }
+        return basis.sumOf { it.totalMillis } / basis.size
     }
 
-    fun calendarWeekEndDateKey(weekStartDateKey: String): String {
-        val calendar = calendarForDateKey(weekStartDateKey) ?: return weekStartDateKey
-        calendar.add(Calendar.DAY_OF_YEAR, 6)
-        return dateFormat.format(calendar.time)
-    }
+    fun calendarWeekStartDateKey(forDateKey: String = todayKey()): String =
+        DateKeys.weekStart(forDateKey)
+
+    fun calendarWeekEndDateKey(weekStartDateKey: String): String =
+        DateKeys.plusDays(weekStartDateKey, 6)
 
     fun effectiveWeekEndDateKey(weekStartDateKey: String, weekEndDateKey: String): String {
         val today = todayKey()
@@ -135,35 +104,13 @@ class UsageTracker(private val context: Context) {
         }
     }
 
-    fun previousWeekStartDateKey(weekStartDateKey: String): String {
-        val calendar = calendarForDateKey(weekStartDateKey) ?: return weekStartDateKey
-        calendar.add(Calendar.DAY_OF_YEAR, -7)
-        return dateFormat.format(calendar.time)
-    }
+    fun previousWeekStartDateKey(weekStartDateKey: String): String =
+        DateKeys.minusDays(weekStartDateKey, 7)
 
-    fun dayBefore(dateKey: String): String {
-        val calendar = calendarForDateKey(dateKey) ?: return dateKey
-        calendar.add(Calendar.DAY_OF_YEAR, -1)
-        return dateFormat.format(calendar.time)
-    }
+    fun dayBefore(dateKey: String): String = DateKeys.minusDays(dateKey, 1)
 
-    fun formatWeekRange(startDateKey: String, endDateKey: String): String {
-        val startCal = calendarForDateKey(startDateKey)
-        val endCal = calendarForDateKey(endDateKey)
-        if (startCal == null || endCal == null) {
-            return "$startDateKey – $endDateKey"
-        }
-        val startDay = startCal.get(Calendar.DAY_OF_MONTH)
-        val endDay = endCal.get(Calendar.DAY_OF_MONTH)
-        val startMonth = SimpleDateFormat("MMMM", Locale("ru")).format(startCal.time)
-        val endMonth = SimpleDateFormat("MMMM", Locale("ru")).format(endCal.time)
-        val year = endCal.get(Calendar.YEAR)
-        return if (startMonth == endMonth) {
-            "$startDay–$endDay $endMonth $year"
-        } else {
-            "$startDay $startMonth – $endDay $endMonth $year"
-        }
-    }
+    fun formatWeekRange(startDateKey: String, endDateKey: String): String =
+        DateKeys.formatWeekRange(startDateKey, endDateKey)
 
     suspend fun loadWeeklyReport(
         weekStartDateKey: String,
@@ -190,7 +137,7 @@ class UsageTracker(private val context: Context) {
 
         val totalMillis = dailySummaries.sumOf { it.totalMillis }
         val dayCount = dateKeys.size.coerceAtLeast(1)
-        val averageDailyMillis = if (dayCount > 0) totalMillis / dayCount else 0L
+        val averageDailyMillis = dailyAverageMillis(dailySummaries)
 
         val previousWeekStart = previousWeekStartDateKey(weekStartDateKey)
         val previousWeekEnd = dayBefore(weekStartDateKey)
@@ -202,8 +149,13 @@ class UsageTracker(private val context: Context) {
 
         val busiestDay = dailySummaries.maxByOrNull { it.totalMillis }?.takeIf { it.totalMillis > 0L }
         val lightestDay = dailySummaries.filter { it.totalMillis > 0L }.minByOrNull { it.totalMillis }
-        val topCategory = AppCategoryHelper.groupByCategory(context, byPackage).firstOrNull()
-        val activeAppCount = byPackage.count { it.value > 0L && it.key != context.packageName }
+        val topCategory = AppCategoryHelper.groupByCategory(
+            context = context,
+            usageByPackage = byPackage,
+            includeHiddenSystemComponents = StatsDisplaySettings.showHiddenSystemComponents(context),
+            hiddenSystemCategoryName = context.getString(R.string.stats_category_hidden_system)
+        ).firstOrNull()
+        val activeAppCount = byPackage.count { it.value > 0L }
 
         WeeklyUsageSummary(
             weekStartDateKey = weekStartDateKey,
@@ -223,18 +175,18 @@ class UsageTracker(private val context: Context) {
 
     fun toWeeklyAppDetails(
         usageByPackage: Map<String, Long>,
-        dayCount: Int
+        dayCount: Int,
+        includeHiddenSystemComponents: Boolean = StatsDisplaySettings.showHiddenSystemComponents(context)
     ): List<WeeklyAppUsageDetail> {
-        val total = usageByPackage.values.sum().coerceAtLeast(1L)
         val effectiveDays = dayCount.coerceAtLeast(1)
-        return AppCategoryHelper.toAppDetails(context, usageByPackage, includeSystemApps = false)
+        return AppCategoryHelper.toAppDetails(context, usageByPackage, includeHiddenSystemComponents)
             .map { app ->
                 WeeklyAppUsageDetail(
                     packageName = app.packageName,
                     label = app.label,
                     totalMillis = app.usedMillis,
                     averageDailyMillis = app.usedMillis / effectiveDays,
-                    shareOfTotal = app.usedMillis.toFloat() / total.toFloat()
+                    shareOfTotal = app.shareOfTotal
                 )
             }
             .sortedByDescending { it.totalMillis }
@@ -255,26 +207,14 @@ class UsageTracker(private val context: Context) {
     }
 
     suspend fun getHourlyBucketsForToday(): List<HourlyUsageBucket> = withContext(Dispatchers.IO) {
-        val start = startOfDayMillis(dateKeyForOffset(0))
-        val end = System.currentTimeMillis()
-        val buckets = parseUsageEvents(start, end, collectHourly = true).hourlyBuckets ?: LongArray(24)
-        (0 until 24).map { hour -> HourlyUsageBucket(hour, buckets[hour]) }
+        hourlyBucketsForDate(todayKey())
     }
 
     suspend fun getPeakPeriodForToday(): PeakUsagePeriod? = getPeakPeriodForDate(todayKey())
 
     suspend fun getPeakPeriodForDate(dateKey: String): PeakUsagePeriod? = withContext(Dispatchers.IO) {
-        val start = startOfDayMillis(dateKey)
-        val end = if (isToday(dateKey)) {
-            System.currentTimeMillis()
-        } else {
-            endOfDayMillis(dateKey)
-        }
-        val buckets = parseUsageEvents(start, end, collectHourly = true).hourlyBuckets ?: LongArray(24)
-        val peak = (0 until 24)
-            .map { hour -> HourlyUsageBucket(hour, buckets[hour]) }
-            .maxByOrNull { it.millis }
-            ?: return@withContext null
+        val buckets = hourlyBucketsForDate(dateKey)
+        val peak = buckets.maxByOrNull { it.millis } ?: return@withContext null
         if (peak.millis <= 0L) return@withContext null
         PeakUsagePeriod(
             startHour = peak.hour,
@@ -303,7 +243,7 @@ class UsageTracker(private val context: Context) {
 
         val stats = usageStatsManager.queryUsageStats(
             UsageStatsManager.INTERVAL_BEST,
-            calendarStartOfToday(),
+            startOfDayMillis(todayKey()),
             end
         )
         return stats
@@ -312,14 +252,24 @@ class UsageTracker(private val context: Context) {
             ?.packageName
     }
 
-    fun formatDuration(millis: Long): String {
-        val totalMinutes = TimeUnit.MILLISECONDS.toMinutes(millis)
-        val hours = totalMinutes / 60
-        val minutes = totalMinutes % 60
-        return when {
-            hours > 0 -> "${hours}ч ${minutes}мин"
-            minutes > 0 -> "${minutes}мин"
-            else -> "< 1мин"
+    fun formatDuration(millis: Long): String = formatDurationStatic(millis)
+
+    companion object {
+        private const val SESSION_MERGE_GAP_MS = 2_000L
+
+        fun formatDurationStatic(millis: Long): String {
+            if (millis <= 0L) {
+                return "0 сек"
+            }
+            val totalSeconds = TimeUnit.MILLISECONDS.toSeconds(millis)
+            val hours = totalSeconds / 3600
+            val minutes = (totalSeconds % 3600) / 60
+            val seconds = totalSeconds % 60
+            return when {
+                hours > 0 -> "${hours}ч ${minutes}мин"
+                minutes > 0 -> "${minutes}мин"
+                else -> "${seconds.coerceAtLeast(1)} сек"
+            }
         }
     }
 
@@ -360,60 +310,19 @@ class UsageTracker(private val context: Context) {
         startMillis: Long,
         endMillis: Long
     ): AppUsageDayDetail {
-        val sessions = mutableListOf<AppUsageSession>()
-        val hourlyBuckets = LongArray(24)
-
-        var activePackage: String? = null
-        var sessionStart = 0L
-
-        fun closeSession(until: Long) {
-            val pkg = activePackage ?: return
-            if (sessionStart <= 0L || until <= sessionStart) {
-                activePackage = null
-                sessionStart = 0L
-                return
-            }
-            if (pkg == packageName) {
-                val duration = until - sessionStart
-                sessions += AppUsageSession(
-                    startMillis = sessionStart,
-                    endMillis = until,
-                    durationMillis = duration
-                )
-                distributeSession(hourlyBuckets, sessionStart, until)
-            }
-            activePackage = null
-            sessionStart = 0L
-        }
-
-        val events = usageStatsManager.queryEvents(startMillis, endMillis)
-        val event = UsageEvents.Event()
-        while (events.hasNextEvent()) {
-            events.getNextEvent(event)
-            val timestamp = event.timeStamp.coerceIn(startMillis, endMillis)
-            val isForeground = event.isForegroundEvent()
-            val isBackground = event.isBackgroundEvent()
-
-            when {
-                isForeground -> {
-                    closeSession(timestamp)
-                    activePackage = event.packageName
-                    sessionStart = timestamp
-                }
-                isBackground && activePackage == event.packageName -> {
-                    closeSession(timestamp)
-                }
-            }
-        }
-        if (activePackage == packageName && sessionStart > 0L) {
-            closeSession(endMillis)
-        }
-
-        val sortedSessions = sessions
-            .filter { it.durationMillis > 0L }
+        val sessions = (buildSessionsByPackage(startMillis, endMillis)[packageName] ?: emptyList())
             .sortedByDescending { it.startMillis }
-        val totalMillis = sortedSessions.sumOf { it.durationMillis }
-        val sessionCount = sortedSessions.size
+
+        // The app total must equal the sum of the sessions we display (Digital Wellbeing behaves
+        // the same). Only when the system has already purged the raw events do we fall back to the
+        // aggregated UsageStats value so the screen is not empty.
+        val totalMillis = sessions.sumOf { it.durationMillis }.takeIf { it > 0L }
+            ?: packageUsageInRange(packageName, startMillis, endMillis)
+
+        val hourlyBuckets = LongArray(24)
+        sessions.forEach { distributeSession(hourlyBuckets, it.startMillis, it.endMillis) }
+
+        val sessionCount = sessions.size
         val averageSessionMillis = if (sessionCount > 0) {
             totalMillis / sessionCount
         } else {
@@ -426,7 +335,7 @@ class UsageTracker(private val context: Context) {
             totalMillis = totalMillis,
             sessionCount = sessionCount,
             averageSessionMillis = averageSessionMillis,
-            sessions = sortedSessions,
+            sessions = sessions,
             hourlyBuckets = (0 until 24).map { hour -> HourlyUsageBucket(hour, hourlyBuckets[hour]) }
         )
     }
@@ -439,14 +348,10 @@ class UsageTracker(private val context: Context) {
             endOfDayMillis(dateKey)
         }
         val usageByPackage = queryUsageForRange(start, end)
+        database.usageDailyDao().deleteForDate(dateKey)
         if (usageByPackage.isEmpty()) {
-            val cached = loadCachedUsageForDate(dateKey)
-            if (cached.isNotEmpty()) {
-                return cached
-            }
             return emptyMap()
         }
-        database.usageDailyDao().deleteForDate(dateKey)
         usageByPackage.forEach { (packageName, millis) ->
             database.usageDailyDao().upsert(
                 UsageDailyEntity(
@@ -460,58 +365,49 @@ class UsageTracker(private val context: Context) {
         return usageByPackage
     }
 
-    private suspend fun loadCachedUsageForDate(dateKey: String): Map<String, Long> {
-        return database.usageDailyDao().getForDate(dateKey)
-            .associate { it.packageName to it.usedMillis }
-    }
-
     private fun queryUsageForRange(startMillis: Long, endMillis: Long): Map<String, Long> {
-        val fromEvents = parseUsageEvents(startMillis, endMillis).usageByPackage
+        val fromEvents = sessionUsageByPackage(startMillis, endMillis)
         if (fromEvents.isNotEmpty()) {
             return fromEvents
         }
-        return queryUsageStatsBest(startMillis, endMillis)
+        // Days whose raw events the system has already purged: best-effort aggregate fallback.
+        return UsageStatsReader.dailyUsageByPackage(usageStatsManager, startMillis, endMillis)
     }
 
-    private fun queryUsageStatsBest(startMillis: Long, endMillis: Long): Map<String, Long> {
-        val stats = usageStatsManager.queryUsageStats(
-            UsageStatsManager.INTERVAL_BEST,
-            startMillis,
-            endMillis
-        ) ?: return emptyMap()
-
-        return stats
-            .filter { it.totalTimeInForeground > 0 && it.packageName != context.packageName }
-            .associate { it.packageName to it.totalTimeInForeground }
+    /**
+     * Per-package foreground time derived from real session boundaries (same number/duration the
+     * detail screen and Digital Wellbeing show), so every surface stays consistent. Works for any
+     * range — full day or short enforcement window — because sessions are clipped to [startMillis,
+     * endMillis] when they are built.
+     */
+    private fun sessionUsageByPackage(startMillis: Long, endMillis: Long): Map<String, Long> {
+        return buildSessionsByPackage(startMillis, endMillis)
+            .mapValues { (_, sessions) -> sessions.sumOf { it.durationMillis } }
+            .filterValues { it > 0L }
     }
 
-    private data class EventParseResult(
-        val usageByPackage: Map<String, Long>,
-        val hourlyBuckets: LongArray? = null
-    )
-
-    private fun parseUsageEvents(
+    /**
+     * Single source of truth for sessions: walks the usage events once, opening a session when the
+     * foreground package changes and closing it on background / screen-off / lock / shutdown, then
+     * coalesces tiny same-app gaps.
+     */
+    private fun buildSessionsByPackage(
         startMillis: Long,
-        endMillis: Long,
-        collectHourly: Boolean = false
-    ): EventParseResult {
-        val usageByPackage = mutableMapOf<String, Long>()
-        val buckets = if (collectHourly) LongArray(24) else null
+        endMillis: Long
+    ): Map<String, List<AppUsageSession>> {
+        val raw = HashMap<String, MutableList<AppUsageSession>>()
 
         var activePackage: String? = null
         var sessionStart = 0L
 
         fun closeSession(until: Long) {
-            val pkg = activePackage ?: return
-            if (sessionStart <= 0L || until <= sessionStart) {
-                activePackage = null
-                sessionStart = 0L
-                return
-            }
-            if (pkg != context.packageName) {
-                val duration = until - sessionStart
-                usageByPackage[pkg] = (usageByPackage[pkg] ?: 0L) + duration
-                buckets?.let { distributeSession(it, sessionStart, until) }
+            val pkg = activePackage
+            if (pkg != null && sessionStart > 0L && until > sessionStart) {
+                raw.getOrPut(pkg) { mutableListOf() } += AppUsageSession(
+                    startMillis = sessionStart,
+                    endMillis = until,
+                    durationMillis = until - sessionStart
+                )
             }
             activePackage = null
             sessionStart = 0L
@@ -522,16 +418,19 @@ class UsageTracker(private val context: Context) {
         while (events.hasNextEvent()) {
             events.getNextEvent(event)
             val timestamp = event.timeStamp.coerceIn(startMillis, endMillis)
-            val isForeground = event.isForegroundEvent()
-            val isBackground = event.isBackgroundEvent()
 
             when {
-                isForeground -> {
-                    closeSession(timestamp)
-                    activePackage = event.packageName
-                    sessionStart = timestamp
+                event.isForegroundEvent() -> {
+                    if (activePackage != event.packageName) {
+                        closeSession(timestamp)
+                        activePackage = event.packageName
+                        sessionStart = timestamp
+                    }
                 }
-                isBackground && activePackage == event.packageName -> {
+                event.isBackgroundEvent() && activePackage == event.packageName -> {
+                    closeSession(timestamp)
+                }
+                event.isSessionTerminatorEvent() -> {
                     closeSession(timestamp)
                 }
             }
@@ -540,10 +439,82 @@ class UsageTracker(private val context: Context) {
             closeSession(endMillis)
         }
 
-        return EventParseResult(
-            usageByPackage = usageByPackage.filterValues { it > 0L },
-            hourlyBuckets = buckets
+        return raw.mapValues { (_, sessions) -> coalesceSessions(sessions) }
+    }
+
+    private fun packageUsageInRange(
+        packageName: String,
+        startMillis: Long,
+        endMillis: Long
+    ): Long {
+        return UsageStatsReader.packageUsage(
+            usageStatsManager = usageStatsManager,
+            packageName = packageName,
+            startMillis = startMillis,
+            endMillis = endMillis
         )
+    }
+
+    /**
+     * Foreground time within an arbitrary (usually sub-day) window. Counts the real session time
+     * inside the window from raw events — NOT [UsageStats.totalTimeInForeground], which reports the
+     * whole day's aggregate and would massively over-report a short enforcement window.
+     */
+    private fun windowUsageByPackage(startMillis: Long, endMillis: Long): Map<String, Long> {
+        if (endMillis <= startMillis) {
+            return emptyMap()
+        }
+        return sessionUsageByPackage(startMillis, endMillis)
+    }
+
+    /**
+     * Hourly distribution built from the SAME coalesced sessions used everywhere else
+     * ([buildSessionsByPackage]). The bucket sum therefore equals the day's total exactly, so the
+     * peak hour is real and no rescaling fudge is needed. Days whose events are already purged yield
+     * empty buckets (no hourly granularity is recoverable from aggregated stats).
+     */
+    private fun hourlyBucketsForDate(dateKey: String): List<HourlyUsageBucket> {
+        val start = startOfDayMillis(dateKey)
+        val end = if (isToday(dateKey)) {
+            System.currentTimeMillis()
+        } else {
+            endOfDayMillis(dateKey)
+        }
+        val buckets = LongArray(24)
+        buildSessionsByPackage(start, end).values.forEach { sessions ->
+            sessions.forEach { distributeSession(buckets, it.startMillis, it.endMillis) }
+        }
+        return (0 until 24).map { hour -> HourlyUsageBucket(hour, buckets[hour]) }
+    }
+
+    /**
+     * Merges fragments of the same app that are separated only by tiny gaps (internal activity
+     * transitions, brief pause/resume bounces). Without this a single continuous visit shows up as
+     * many "fabricated" micro-sessions.
+     */
+    private fun coalesceSessions(sessions: List<AppUsageSession>): List<AppUsageSession> {
+        if (sessions.size <= 1) {
+            return sessions
+        }
+        val ascending = sessions.sortedBy { it.startMillis }
+        val merged = ArrayList<AppUsageSession>(ascending.size)
+        var current = ascending.first()
+        for (index in 1 until ascending.size) {
+            val next = ascending[index]
+            val gap = next.startMillis - current.endMillis
+            if (gap <= SESSION_MERGE_GAP_MS) {
+                val newEnd = maxOf(current.endMillis, next.endMillis)
+                current = current.copy(
+                    endMillis = newEnd,
+                    durationMillis = newEnd - current.startMillis
+                )
+            } else {
+                merged += current
+                current = next
+            }
+        }
+        merged += current
+        return merged
     }
 
     private fun distributeSession(buckets: LongArray, startMillis: Long, endMillis: Long) {
@@ -561,70 +532,20 @@ class UsageTracker(private val context: Context) {
         }
     }
 
-    private fun dateKeysBetween(startDateKey: String, endDateKey: String): List<String> {
-        val start = calendarForDateKey(startDateKey) ?: return emptyList()
-        val end = calendarForDateKey(endDateKey) ?: return emptyList()
-        if (end.before(start)) {
-            return emptyList()
-        }
-        val keys = mutableListOf<String>()
-        val cursor = start.clone() as Calendar
-        while (!cursor.after(end)) {
-            keys += dateFormat.format(cursor.time)
-            cursor.add(Calendar.DAY_OF_YEAR, 1)
-        }
-        return keys
-    }
-
-    private fun calendarForDateKey(dateKey: String): Calendar? {
-        val parts = dateKey.split("-")
-        if (parts.size != 3) return null
-        val year = parts[0].toIntOrNull() ?: return null
-        val month = parts[1].toIntOrNull()?.minus(1) ?: return null
-        val day = parts[2].toIntOrNull() ?: return null
-        return Calendar.getInstance().apply {
-            clear()
-            set(year, month, day, 0, 0, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-    }
+    private fun dateKeysBetween(startDateKey: String, endDateKey: String): List<String> =
+        DateKeys.dateKeysBetween(startDateKey, endDateKey)
 
     private fun startOfDayMillis(dateKey: String): Long {
-        return calendarForDateKey(dateKey)?.timeInMillis ?: calendarStartOfToday()
+        return DateKeys.startOfDayMillis(dateKey) ?: DateKeys.startOfDayMillis(todayKey()) ?: 0L
     }
 
     private fun endOfDayMillis(dateKey: String): Long {
-        return Calendar.getInstance().apply {
-            timeInMillis = startOfDayMillis(dateKey)
-            add(Calendar.DAY_OF_YEAR, 1)
-            add(Calendar.MILLISECOND, -1)
-        }.timeInMillis
+        return DateKeys.endOfDayMillis(dateKey)
+            ?: DateKeys.endOfDayMillis(todayKey())
+            ?: System.currentTimeMillis()
     }
 
-    private fun calendarStartOfToday(): Long {
-        return Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }.timeInMillis
-    }
-
-    private fun pickerUtcMillisForToday(): Long {
-        return dateKeyToPickerUtcMillis(todayKey())
-    }
-
-    fun millisUntilMidnight(): Long {
-        val now = Calendar.getInstance()
-        val midnight = Calendar.getInstance().apply {
-            add(Calendar.DAY_OF_YEAR, 1)
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-        return midnight.timeInMillis - now.timeInMillis
-    }
+    fun millisUntilMidnight(): Long = DateKeys.millisUntilMidnight()
 
     fun getPackageUsageInWindow(
         packageName: String,
@@ -632,7 +553,7 @@ class UsageTracker(private val context: Context) {
         nowMillis: Long = System.currentTimeMillis()
     ): Long {
         val startMillis = nowMillis - windowMinutes * 60_000L
-        return parseUsageEvents(startMillis, nowMillis).usageByPackage[packageName] ?: 0L
+        return windowUsageByPackage(startMillis, nowMillis)[packageName] ?: 0L
     }
 
     fun getCategoryUsageInWindow(
@@ -641,7 +562,7 @@ class UsageTracker(private val context: Context) {
         nowMillis: Long = System.currentTimeMillis()
     ): Long {
         val startMillis = nowMillis - windowMinutes * 60_000L
-        val usageByPackage = parseUsageEvents(startMillis, nowMillis).usageByPackage
+        val usageByPackage = windowUsageByPackage(startMillis, nowMillis)
         return AppCategoryHelper.aggregateUsageForCategory(context, usageByPackage, categoryId)
     }
 
@@ -651,7 +572,7 @@ class UsageTracker(private val context: Context) {
         nowMillis: Long = System.currentTimeMillis()
     ): Long {
         val startMillis = nowMillis - windowMinutes * 60_000L
-        val usageByPackage = parseUsageEvents(startMillis, nowMillis).usageByPackage
+        val usageByPackage = windowUsageByPackage(startMillis, nowMillis)
         return AppGroupHelper.aggregateUsageForGroup(usageByPackage, groupId, context.packageName)
     }
 
@@ -666,5 +587,15 @@ class UsageTracker(private val context: Context) {
             eventType == UsageEvents.Event.ACTIVITY_STOPPED ||
             @Suppress("DEPRECATION")
             (eventType == UsageEvents.Event.MOVE_TO_BACKGROUND)
+    }
+
+    /**
+     * Screen-off / lock / shutdown end any foreground session, the same way Digital Wellbeing stops
+     * counting. Prevents a session from spanning idle or powered-off periods.
+     */
+    private fun UsageEvents.Event.isSessionTerminatorEvent(): Boolean {
+        return eventType == UsageEvents.Event.SCREEN_NON_INTERACTIVE ||
+            eventType == UsageEvents.Event.KEYGUARD_SHOWN ||
+            eventType == UsageEvents.Event.DEVICE_SHUTDOWN
     }
 }

@@ -6,6 +6,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import com.ecosentinel.appblocker.survival.SurvivalManager
 import java.util.concurrent.TimeUnit
 
 class MonitorWatchdogWorker(
@@ -14,7 +15,7 @@ class MonitorWatchdogWorker(
 ) : CoroutineWorker(appContext, params) {
 
     override suspend fun doWork(): Result {
-        MonitorBootstrap.ensureMonitoring(applicationContext)
+        SurvivalManager.runCheckNow(applicationContext, SurvivalManager.REASON_WATCHDOG)
         return Result.success()
     }
 

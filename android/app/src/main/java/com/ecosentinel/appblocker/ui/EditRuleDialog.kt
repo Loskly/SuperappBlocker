@@ -1,10 +1,13 @@
 package com.ecosentinel.appblocker.ui
 
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
 import com.ecosentinel.appblocker.R
@@ -13,11 +16,19 @@ import com.ecosentinel.appblocker.databinding.DialogEditRuleBinding
 import com.ecosentinel.appblocker.engine.BlockMode
 import com.ecosentinel.appblocker.engine.BlockSchedule
 import com.ecosentinel.appblocker.engine.CooldownSettings
+import com.ecosentinel.appblocker.engine.RuleLockConfig
+import com.ecosentinel.appblocker.engine.RuleLockMode
 import com.ecosentinel.appblocker.engine.TargetType
 import com.ecosentinel.appblocker.modules.applimit.AppLimitModule
+import com.ecosentinel.appblocker.tracker.AppGroupHelper
+import com.ecosentinel.appblocker.util.InstalledApp
+import com.ecosentinel.appblocker.util.InstalledAppsHelper
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.Calendar
 
 class EditRuleDialog : DialogFragment() {
 
@@ -41,6 +52,13 @@ class EditRuleDialog : DialogFragment() {
     private var startMinute = 0
     private var endHour = 7
     private var endMinute = 0
+    private var lockUntilHour = 21
+    private var lockUntilMinute = 0
+
+    private lateinit var groupAppsAdapter: GroupAppPickAdapter
+    private val selectedGroupPackages = mutableSetOf<String>()
+    private var allGroupApps: List<InstalledApp> = emptyList()
+    private var groupAppsExpanded = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -75,9 +93,18 @@ class EditRuleDialog : DialogFragment() {
             binding.packageText.text = packageName
         }
 
+        if (targetType == TargetType.CUSTOM_GROUP && groupId.isNotBlank()) {
+            setupGroupAppsSection()
+        } else {
+            binding.groupAppsSection.isVisible = false
+        }
+
         binding.modeGroup.setOnCheckedChangeListener { _, _ ->
             updateModeVisibility()
+            updateBlockActiveLockAvailability()
         }
+
+        setupLockModeControls()
 
         binding.btnScheduleStart.setOnClickListener {
             showTimePicker(isStart = true)
@@ -119,6 +146,7 @@ class EditRuleDialog : DialogFragment() {
                         binding.cooldownBlockInput.setText(settings.blockMinutes.toString())
                     }
                 }
+                applyLockValues(rule)
                 binding.modeGroup.isEnabled = false
                 for (index in 0 until binding.modeGroup.childCount) {
                     binding.modeGroup.getChildAt(index).isEnabled = false
@@ -133,16 +161,103 @@ class EditRuleDialog : DialogFragment() {
                 binding.cooldownUsageInput.setText(CooldownSettings.DEFAULT.usageMinutes.toString())
                 binding.cooldownWindowInput.setText(CooldownSettings.DEFAULT.windowMinutes.toString())
                 binding.cooldownBlockInput.setText(CooldownSettings.DEFAULT.blockMinutes.toString())
+                binding.radioLockNormal.isChecked = true
+                binding.radioLockDelay15.isChecked = true
             }
             updateSchedulePreview()
             updateModeVisibility()
             applyWebsiteModeRestrictions()
+            updateStrictOptionsVisibility()
+            updateCustomLockPreview()
+            updateBlockActiveLockAvailability()
         }
 
         binding.btnSave.setOnClickListener {
             lifecycleScope.launch { saveRule() }
         }
         binding.btnCancel.setOnClickListener { dismiss() }
+    }
+
+    private fun setupGroupAppsSection() {
+        binding.groupAppsSection.isVisible = true
+        groupAppsExpanded = false
+        groupAppsAdapter = GroupAppPickAdapter(selectedGroupPackages) { packageName, checked ->
+            if (checked) {
+                selectedGroupPackages.add(packageName)
+            } else {
+                selectedGroupPackages.remove(packageName)
+            }
+            applyGroupAppsFilter(binding.groupAppsSearchInput.text?.toString().orEmpty())
+        }
+        binding.groupAppsRecyclerView.prepareForScrollParent(requireContext())
+        binding.groupAppsRecyclerView.adapter = groupAppsAdapter
+        binding.btnToggleGroupAppsList.setOnClickListener {
+            groupAppsExpanded = !groupAppsExpanded
+            applyGroupAppsFilter(binding.groupAppsSearchInput.text?.toString().orEmpty())
+        }
+
+        binding.groupAppsSearchInput.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                applyGroupAppsFilter(s?.toString().orEmpty())
+            }
+        })
+
+        binding.groupAppsLoadingText.isVisible = true
+        lifecycleScope.launch {
+            val members = withContext(Dispatchers.IO) {
+                AppDatabase.getInstance(requireContext()).appGroupDao().getMemberPackages(groupId)
+            }
+            selectedGroupPackages.clear()
+            selectedGroupPackages.addAll(members)
+
+            allGroupApps = withContext(Dispatchers.IO) {
+                InstalledAppsHelper.getAllInstalledApps(requireContext())
+            }
+            binding.groupAppsLoadingText.isVisible = false
+            groupAppsAdapter.notifyDataSetChanged()
+            applyGroupAppsFilter(binding.groupAppsSearchInput.text?.toString().orEmpty())
+        }
+    }
+
+    private fun applyGroupAppsFilter(queryRaw: String) {
+        if (!::groupAppsAdapter.isInitialized) {
+            return
+        }
+        val query = queryRaw.trim().lowercase()
+        val filtered = if (query.isEmpty()) {
+            allGroupApps
+        } else {
+            allGroupApps.filter {
+                it.label.lowercase().contains(query) || it.packageName.lowercase().contains(query)
+            }
+        }
+        val sorted = filtered.sortedForGroupPicker()
+        val visibleApps = if (groupAppsExpanded) {
+            sorted
+        } else {
+            sorted.take(COLLAPSED_GROUP_APPS_COUNT)
+        }
+        groupAppsAdapter.submitListRemeasure(binding.groupAppsRecyclerView, visibleApps)
+
+        binding.btnToggleGroupAppsList.isVisible = sorted.size > COLLAPSED_GROUP_APPS_COUNT
+        binding.btnToggleGroupAppsList.text = if (groupAppsExpanded) {
+            getString(R.string.group_apps_collapse)
+        } else {
+            getString(R.string.group_apps_expand, sorted.size)
+        }
+
+        val hasApps = allGroupApps.isNotEmpty()
+        binding.groupAppsEmptyText.isVisible = hasApps && sorted.isEmpty()
+    }
+
+    private fun List<InstalledApp>.sortedForGroupPicker(): List<InstalledApp> {
+        return sortedWith(
+            compareBy<InstalledApp> { it.packageName !in selectedGroupPackages }
+                .thenBy { it.label.lowercase() }
+                .thenBy { it.packageName.lowercase() }
+        )
     }
 
     private fun applyWebsiteModeRestrictions() {
@@ -156,6 +271,25 @@ class EditRuleDialog : DialogFragment() {
         }
     }
 
+    private fun setupLockModeControls() {
+        binding.lockModeGroup.setOnCheckedChangeListener { _, _ ->
+            updateStrictOptionsVisibility()
+        }
+        binding.checkLockUntilCustomTime.setOnCheckedChangeListener { _, _ ->
+            updateStrictOptionsVisibility()
+            updateCustomLockPreview()
+        }
+        binding.checkLockDelay.setOnCheckedChangeListener { _, checked ->
+            binding.lockDelayGroup.visibility = if (checked) View.VISIBLE else View.GONE
+            if (checked && binding.lockDelayGroup.checkedRadioButtonId == View.NO_ID) {
+                binding.radioLockDelay15.isChecked = true
+            }
+        }
+        binding.btnLockUntilCustomTime.setOnClickListener {
+            showLockUntilTimePicker()
+        }
+    }
+
     private fun updateModeVisibility() {
         val isTimeLimit = binding.radioTimeLimit.isChecked
         val isTimeOfDay = binding.radioTimeOfDay.isChecked
@@ -163,6 +297,25 @@ class EditRuleDialog : DialogFragment() {
         binding.limitInputLayout.visibility = if (isTimeLimit) View.VISIBLE else View.GONE
         binding.scheduleInputLayout.visibility = if (isTimeOfDay) View.VISIBLE else View.GONE
         binding.cooldownInputLayout.visibility = if (isCooldown) View.VISIBLE else View.GONE
+    }
+
+    private fun updateStrictOptionsVisibility() {
+        val isStrict = binding.radioLockStrict.isChecked
+        binding.strictOptionsLayout.visibility = if (isStrict) View.VISIBLE else View.GONE
+        binding.customLockTimeLayout.visibility =
+            if (isStrict && binding.checkLockUntilCustomTime.isChecked) View.VISIBLE else View.GONE
+        binding.lockDelayGroup.visibility =
+            if (isStrict && binding.checkLockDelay.isChecked) View.VISIBLE else View.GONE
+    }
+
+    private fun updateBlockActiveLockAvailability() {
+        val supportsActiveBlockLock = binding.radioTimeLimit.isChecked ||
+            binding.radioTimeOfDay.isChecked ||
+            binding.radioCooldown.isChecked
+        binding.checkLockOnBlockActive.isEnabled = supportsActiveBlockLock
+        if (!supportsActiveBlockLock) {
+            binding.checkLockOnBlockActive.isChecked = false
+        }
     }
 
     private fun updateSchedulePreview() {
@@ -179,6 +332,47 @@ class EditRuleDialog : DialogFragment() {
             R.string.schedule_end_value,
             BlockSchedule.formatTime(endHour, endMinute)
         )
+    }
+
+    private fun updateCustomLockPreview() {
+        binding.lockUntilCustomPreview.text = getString(
+            R.string.rule_lock_until_time_preview,
+            BlockSchedule.formatTime(lockUntilHour, lockUntilMinute)
+        )
+        binding.btnLockUntilCustomTime.text = getString(
+            R.string.rule_lock_until_time_preview,
+            BlockSchedule.formatTime(lockUntilHour, lockUntilMinute)
+        )
+    }
+
+    private fun applyLockValues(rule: com.ecosentinel.appblocker.data.entity.PolicyRuleEntity) {
+        val nowMillis = System.currentTimeMillis()
+        val customUntil = rule.lockUntilCustomMillis?.takeIf { it > nowMillis }
+
+        if (rule.lockMode == RuleLockMode.STRICT) {
+            binding.radioLockStrict.isChecked = true
+            binding.checkLockUntilEndOfDay.isChecked =
+                rule.lockUntilDayEndMillis?.let { it > nowMillis } == true
+            binding.checkLockUntilCustomTime.isChecked = customUntil != null
+            customUntil?.let { millis ->
+                Calendar.getInstance().apply {
+                    timeInMillis = millis
+                    lockUntilHour = get(Calendar.HOUR_OF_DAY)
+                    lockUntilMinute = get(Calendar.MINUTE)
+                }
+            }
+            binding.checkLockOnBlockActive.isChecked = rule.lockOnBlockActive
+            val delayMinutes = rule.lockDelayMinutes
+            binding.checkLockDelay.isChecked = delayMinutes != null
+            when (delayMinutes) {
+                30 -> binding.radioLockDelay30.isChecked = true
+                60 -> binding.radioLockDelay60.isChecked = true
+                else -> binding.radioLockDelay15.isChecked = true
+            }
+        } else {
+            binding.radioLockNormal.isChecked = true
+            binding.radioLockDelay15.isChecked = true
+        }
     }
 
     private fun showTimePicker(isStart: Boolean) {
@@ -206,6 +400,22 @@ class EditRuleDialog : DialogFragment() {
             updateSchedulePreview()
         }
         picker.show(parentFragmentManager, if (isStart) "start_time" else "end_time")
+    }
+
+    private fun showLockUntilTimePicker() {
+        val picker = MaterialTimePicker.Builder()
+            .setTimeFormat(TimeFormat.CLOCK_24H)
+            .setHour(lockUntilHour)
+            .setMinute(lockUntilMinute)
+            .setTitleText(getString(R.string.rule_lock_pick_time))
+            .build()
+
+        picker.addOnPositiveButtonClickListener {
+            lockUntilHour = picker.hour
+            lockUntilMinute = picker.minute
+            updateCustomLockPreview()
+        }
+        picker.show(parentFragmentManager, "lock_until_time")
     }
 
     private suspend fun saveRule() {
@@ -263,6 +473,16 @@ class EditRuleDialog : DialogFragment() {
             return
         }
 
+        val lockConfig = buildRuleLockConfig() ?: return
+
+        if (targetType == TargetType.CUSTOM_GROUP && groupId.isNotBlank()) {
+            if (selectedGroupPackages.isEmpty()) {
+                Toast.makeText(requireContext(), getString(R.string.group_apps_required), Toast.LENGTH_SHORT).show()
+                return
+            }
+            AppGroupHelper.saveGroupMembers(requireContext(), groupId, selectedGroupPackages.toSet())
+        }
+
         val dao = AppDatabase.getInstance(requireContext()).policyRuleDao()
         val existingRule = if (editingExistingRule) {
             dao.getById(ruleId)
@@ -282,7 +502,8 @@ class EditRuleDialog : DialogFragment() {
                 dailyLimitMinutes = limitMinutes,
                 schedule = schedule,
                 cooldownSettings = cooldownSettings,
-                enabled = existingRule?.enabled ?: true
+                enabled = existingRule?.enabled ?: true,
+                lockConfig = lockConfig
             )
             TargetType.CUSTOM_GROUP -> AppLimitModule.createGroupRule(
                 groupId = groupId,
@@ -290,13 +511,15 @@ class EditRuleDialog : DialogFragment() {
                 dailyLimitMinutes = limitMinutes,
                 schedule = schedule,
                 cooldownSettings = cooldownSettings,
-                enabled = existingRule?.enabled ?: true
+                enabled = existingRule?.enabled ?: true,
+                lockConfig = lockConfig
             )
             TargetType.URL_PATTERN -> AppLimitModule.createWebsiteRule(
                 domain = websiteDomain,
                 blockMode = blockMode,
                 schedule = schedule,
-                enabled = existingRule?.enabled ?: true
+                enabled = existingRule?.enabled ?: true,
+                lockConfig = lockConfig
             )
             else -> AppLimitModule.createRule(
                 packageName = packageName,
@@ -304,12 +527,80 @@ class EditRuleDialog : DialogFragment() {
                 dailyLimitMinutes = limitMinutes,
                 schedule = schedule,
                 cooldownSettings = cooldownSettings,
-                enabled = existingRule?.enabled ?: true
+                enabled = existingRule?.enabled ?: true,
+                lockConfig = lockConfig
             )
         }
         dao.upsert(rule)
         (activity as? Listener)?.onRuleSaved()
         dismiss()
+    }
+
+    private fun buildRuleLockConfig(): RuleLockConfig? {
+        if (!binding.radioLockStrict.isChecked) {
+            return RuleLockConfig.NORMAL
+        }
+
+        val untilDayEndMillis = if (binding.checkLockUntilEndOfDay.isChecked) {
+            endOfTodayMillis()
+        } else {
+            null
+        }
+        val untilCustomMillis = if (binding.checkLockUntilCustomTime.isChecked) {
+            nextCustomLockMillis()
+        } else {
+            null
+        }
+        val delayMinutes = if (binding.checkLockDelay.isChecked) {
+            when {
+                binding.radioLockDelay60.isChecked -> 60
+                binding.radioLockDelay30.isChecked -> 30
+                else -> 15
+            }
+        } else {
+            null
+        }
+
+        val hasCondition = untilDayEndMillis != null ||
+            untilCustomMillis != null ||
+            binding.checkLockOnBlockActive.isChecked ||
+            delayMinutes != null
+
+        if (!hasCondition) {
+            Toast.makeText(requireContext(), R.string.rule_lock_condition_required, Toast.LENGTH_SHORT).show()
+            return null
+        }
+
+        return RuleLockConfig(
+            mode = RuleLockMode.STRICT,
+            untilDayEndMillis = untilDayEndMillis,
+            untilCustomMillis = untilCustomMillis,
+            onBlockActive = binding.checkLockOnBlockActive.isChecked,
+            delayMinutes = delayMinutes,
+            delayStartedAtMillis = null
+        )
+    }
+
+    private fun endOfTodayMillis(): Long {
+        return Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 23)
+            set(Calendar.MINUTE, 59)
+            set(Calendar.SECOND, 59)
+            set(Calendar.MILLISECOND, 999)
+        }.timeInMillis
+    }
+
+    private fun nextCustomLockMillis(): Long {
+        val nowMillis = System.currentTimeMillis()
+        return Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, lockUntilHour)
+            set(Calendar.MINUTE, lockUntilMinute)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+            if (timeInMillis <= nowMillis) {
+                add(Calendar.DAY_OF_YEAR, 1)
+            }
+        }.timeInMillis
     }
 
     override fun onDestroyView() {
@@ -318,6 +609,8 @@ class EditRuleDialog : DialogFragment() {
     }
 
     companion object {
+        private const val COLLAPSED_GROUP_APPS_COUNT = 5
+
         private const val ARG_RULE_ID = "rule_id"
         private const val ARG_PACKAGE_NAME = "package_name"
         private const val ARG_CATEGORY_ID = "category_id"

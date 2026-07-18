@@ -9,7 +9,6 @@ import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DiffUtil
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.ecosentinel.appblocker.R
@@ -57,9 +56,8 @@ class AppStatsDetailActivity : AppCompatActivity() {
             getString(R.string.app_stats_sessions_list_day, displayDate.lowercase())
         }
 
-        binding.sessionsRecyclerView.layoutManager = LinearLayoutManager(this)
+        binding.sessionsRecyclerView.prepareForScrollParent(this)
         binding.sessionsRecyclerView.adapter = sessionAdapter
-        binding.sessionsRecyclerView.setHasFixedSize(false)
 
         if (!PermissionHelper.hasUsageAccess(this)) {
             binding.totalTimeText.text = getString(R.string.stats_peak_unknown)
@@ -79,7 +77,7 @@ class AppStatsDetailActivity : AppCompatActivity() {
                 "—"
             }
             binding.hourlyChart.setData(detail.hourlyBuckets)
-            sessionAdapter.submitList(detail.sessions)
+            sessionAdapter.submitListRemeasure(binding.sessionsRecyclerView, detail.sessions)
             binding.emptySessionsText.text = if (usageTracker.isToday(dateKey)) {
                 getString(R.string.app_stats_no_sessions)
             } else {

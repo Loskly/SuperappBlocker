@@ -46,7 +46,7 @@
             android:visibility="gone"
             tools:visibility="visible" />
 
-        <androidx.recyclerview.widget.RecyclerView
+        <com.ecosentinel.appblocker.ui.FullHeightRecyclerView
             android:id="@+id/todosRecyclerView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

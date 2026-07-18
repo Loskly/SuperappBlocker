@@ -10,7 +10,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DiffUtil
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.ecosentinel.appblocker.R
@@ -78,7 +77,7 @@ class FocusActivity : AppCompatActivity() {
         binding.btnStartFocus.setOnClickListener { startFocus() }
         binding.btnStopFocus.setOnClickListener { confirmStopFocus() }
 
-        binding.categoriesRecyclerView.layoutManager = LinearLayoutManager(this)
+        binding.categoriesRecyclerView.prepareForScrollParent(this)
         binding.categoriesRecyclerView.adapter = categoryAdapter
         categoryAdapter.submitList(AppCategory.selectableCategories())
 

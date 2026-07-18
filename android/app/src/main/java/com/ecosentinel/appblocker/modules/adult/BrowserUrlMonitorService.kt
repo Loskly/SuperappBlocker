@@ -48,6 +48,8 @@ class BrowserUrlMonitorService : AccessibilityService() {
 
         val packageName = event.packageName?.toString() ?: return
 
+        val windowClassName = event.className?.toString()
+
         val root = rootInActiveWindow ?: return
 
         try {
@@ -56,7 +58,7 @@ class BrowserUrlMonitorService : AccessibilityService() {
 
                 SupportedBrowsers.isBrowser(packageName) -> handleBrowser(root, packageName)
 
-                SupportedInAppApps.isSupported(packageName) -> handleInApp(root, packageName)
+                SupportedInAppApps.isSupported(packageName) -> handleInApp(root, packageName, windowClassName)
 
             }
 
@@ -86,7 +88,11 @@ class BrowserUrlMonitorService : AccessibilityService() {
 
 
 
-    private fun handleInApp(root: AccessibilityNodeInfo, packageName: String) {
+    private fun handleInApp(
+        root: AccessibilityNodeInfo,
+        packageName: String,
+        windowClassName: String?
+    ) {
         val shouldDetect = when (packageName) {
             SupportedInAppApps.YOUTUBE -> InAppFeatureSettings.isYoutubeShortsBlocked(this)
             SupportedInAppApps.INSTAGRAM -> InAppFeatureSettings.isInstagramReelsBlocked(this)
@@ -97,7 +103,7 @@ class BrowserUrlMonitorService : AccessibilityService() {
             return
         }
 
-        val feature = InAppFeatureDetector.detect(packageName, root)
+        val feature = InAppFeatureDetector.detect(packageName, root, windowClassName)
         if (feature == null) {
             InAppFeatureState.clearForPackage(packageName)
         } else {

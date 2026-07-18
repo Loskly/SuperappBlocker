@@ -10,7 +10,6 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DiffUtil
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.ecosentinel.appblocker.R
@@ -69,7 +68,7 @@ class TodoFragment : Fragment(), TodoEditDialog.Listener {
             }
         )
 
-        binding.todosRecyclerView.layoutManager = LinearLayoutManager(requireContext())
+        binding.todosRecyclerView.prepareForScrollParent(requireContext())
         binding.todosRecyclerView.adapter = adapter
         binding.btnAddTodo.setOnClickListener {
             TodoEditDialog.newInstance().show(childFragmentManager, "todo_add")
@@ -77,7 +76,7 @@ class TodoFragment : Fragment(), TodoEditDialog.Listener {
 
         viewLifecycleOwner.lifecycleScope.launch {
             todoDao.observeAll().collectLatest { todos ->
-                adapter.submitList(todos)
+                adapter.submitListRemeasure(binding.todosRecyclerView, todos)
                 binding.emptyTodosText.isVisible = todos.isEmpty()
             }
         }

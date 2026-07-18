@@ -7,7 +7,6 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DiffUtil
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.ecosentinel.appblocker.R
@@ -17,6 +16,7 @@ import com.ecosentinel.appblocker.databinding.ItemStatsAppBinding
 import com.ecosentinel.appblocker.tracker.AppCategoryHelper
 import com.ecosentinel.appblocker.tracker.AppUsageDetail
 import com.ecosentinel.appblocker.tracker.DailyUsageSummary
+import com.ecosentinel.appblocker.tracker.StatsDisplaySettings
 import com.ecosentinel.appblocker.tracker.UsageTracker
 import com.ecosentinel.appblocker.engine.TargetType
 import com.ecosentinel.appblocker.ui.stats.ChartBarEntry
@@ -25,8 +25,9 @@ import com.ecosentinel.appblocker.util.InstalledAppsHelper
 import com.ecosentinel.appblocker.util.PermissionHelper
 import com.google.android.material.datepicker.CalendarConstraints
 import com.google.android.material.datepicker.MaterialDatePicker
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
 
 class StatsFragment : Fragment() {
@@ -47,6 +48,8 @@ class StatsFragment : Fragment() {
 
     private var currentFilter = StatsFilter.ALL
     private var showSystemApps = false
+    private var followToday = true
+    private var midnightRolloverJob: Job? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -60,8 +63,15 @@ class StatsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         usageTracker = UsageTracker(requireContext())
-        selectedDateKey = savedInstanceState?.getString(STATE_SELECTED_DATE_KEY)
-            ?: usageTracker.todayKey()
+        showSystemApps = StatsDisplaySettings.showHiddenSystemComponents(requireContext())
+        if (savedInstanceState != null) {
+            selectedDateKey = savedInstanceState.getString(STATE_SELECTED_DATE_KEY)
+                ?: usageTracker.todayKey()
+            followToday = savedInstanceState.getBoolean(STATE_FOLLOW_TODAY, false)
+        } else {
+            selectedDateKey = usageTracker.todayKey()
+            followToday = true
+        }
 
         statsAdapter = StatsAppAdapter { app ->
             AppStatsDetailActivity.launch(
@@ -71,7 +81,7 @@ class StatsFragment : Fragment() {
                 selectedDateKey
             )
         }
-        binding.statsAppsRecyclerView.layoutManager = LinearLayoutManager(requireContext())
+        binding.statsAppsRecyclerView.prepareForScrollParent(requireContext())
         binding.statsAppsRecyclerView.adapter = statsAdapter
 
         setupFilters()
@@ -88,11 +98,20 @@ class StatsFragment : Fragment() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putString(STATE_SELECTED_DATE_KEY, selectedDateKey)
+        outState.putBoolean(STATE_FOLLOW_TODAY, followToday)
     }
 
     override fun onResume() {
         super.onResume()
+        applySelectedDateForTodayMode()
+        scheduleMidnightRollover()
         refreshStats()
+    }
+
+    override fun onPause() {
+        midnightRolloverJob?.cancel()
+        midnightRolloverJob = null
+        super.onPause()
     }
 
     override fun onDestroyView() {
@@ -121,8 +140,10 @@ class StatsFragment : Fragment() {
             .build()
 
         picker.addOnPositiveButtonClickListener { selection ->
-            selectedDateKey = usageTracker.pickerUtcMillisToDateKey(selection)
+            selectedDateKey = usageTracker.resolveDateKeyFromPicker(selection)
+            followToday = selectedDateKey == usageTracker.todayKey()
             updateDateButtonLabel()
+            scheduleMidnightRollover()
             refreshStats()
         }
         picker.show(parentFragmentManager, DATE_PICKER_TAG)
@@ -160,8 +181,11 @@ class StatsFragment : Fragment() {
             }
             renderAppList()
         }
+        binding.showSystemSwitch.setOnCheckedChangeListener(null)
+        binding.showSystemSwitch.isChecked = showSystemApps
         binding.showSystemSwitch.setOnCheckedChangeListener { _, isChecked ->
             showSystemApps = isChecked
+            StatsDisplaySettings.setShowHiddenSystemComponents(requireContext(), isChecked)
             renderCategoryChart()
             renderAppList()
         }
@@ -175,7 +199,7 @@ class StatsFragment : Fragment() {
         binding.btnSelectDate.visibility = if (hasAccess) View.VISIBLE else View.GONE
 
         if (!hasAccess) {
-            statsAdapter.submitList(emptyList())
+            statsAdapter.submitListRemeasure(binding.statsAppsRecyclerView, emptyList())
             binding.emptyStatsText.visibility = View.VISIBLE
             binding.weeklyChart.setData(emptyList())
             binding.categoryChart.setData(emptyList())
@@ -213,11 +237,7 @@ class StatsFragment : Fragment() {
     private fun renderSummaryCards(selectedTotalMillis: Long) {
         binding.totalTimeText.text = usageTracker.formatDuration(selectedTotalMillis)
 
-        val average = if (weeklySummaries.isNotEmpty()) {
-            weeklySummaries.map { it.totalMillis }.average().toLong()
-        } else {
-            0L
-        }
+        val average = usageTracker.dailyAverageMillis(weeklySummaries)
         binding.averageTimeText.text = getString(
             R.string.stats_average_week,
             usageTracker.formatDuration(average)
@@ -241,14 +261,19 @@ class StatsFragment : Fragment() {
         val entries = weeklySummaries.map { summary ->
             ChartBarEntry(
                 label = summary.label,
-                minutes = TimeUnit.MILLISECONDS.toMinutes(summary.totalMillis)
+                millis = summary.totalMillis
             )
         }
         binding.weeklyChart.setData(entries)
     }
 
     private fun renderCategoryChart() {
-        val categories = AppCategoryHelper.groupByCategory(requireContext(), selectedDayUsage)
+        val categories = AppCategoryHelper.groupByCategory(
+            context = requireContext(),
+            usageByPackage = selectedDayUsage,
+            includeHiddenSystemComponents = showSystemApps,
+            hiddenSystemCategoryName = getString(R.string.stats_category_hidden_system)
+        )
         val topCategories = categories.take(5)
         val otherMillis = categories.drop(5).sumOf { it.millis }
         val chartEntries = topCategories.map { ChartSliceEntry(it.categoryName, it.millis) }.toMutableList()
@@ -271,12 +296,48 @@ class StatsFragment : Fragment() {
             }
             StatsFilter.ALL -> apps
         }
-        statsAdapter.submitList(apps)
+        statsAdapter.submitListRemeasure(binding.statsAppsRecyclerView, apps)
         binding.emptyStatsText.visibility = if (apps.isEmpty()) View.VISIBLE else View.GONE
+    }
+
+    private fun applySelectedDateForTodayMode() {
+        val today = usageTracker.todayKey()
+        when {
+            followToday && selectedDateKey != today -> {
+                selectedDateKey = today
+                updateDateButtonLabel()
+            }
+            !followToday && selectedDateKey > today -> {
+                selectedDateKey = today
+                updateDateButtonLabel()
+            }
+        }
+    }
+
+    private fun scheduleMidnightRollover() {
+        midnightRolloverJob?.cancel()
+        if (!followToday) {
+            return
+        }
+        midnightRolloverJob = viewLifecycleOwner.lifecycleScope.launch {
+            val delayMs = usageTracker.millisUntilMidnight()
+            if (delayMs <= 0L) {
+                return@launch
+            }
+            delay(delayMs + 500L)
+            if (!followToday || !isResumed) {
+                return@launch
+            }
+            selectedDateKey = usageTracker.todayKey()
+            updateDateButtonLabel()
+            refreshStats()
+            scheduleMidnightRollover()
+        }
     }
 
     companion object {
         private const val STATE_SELECTED_DATE_KEY = "selected_date_key"
+        private const val STATE_FOLLOW_TODAY = "follow_today"
         private const val DATE_PICKER_TAG = "stats_date_picker"
     }
 }
@@ -309,18 +370,11 @@ class StatsAppAdapter(
             currentItem = item
             binding.appNameText.text = item.label
             val percent = (item.shareOfTotal * 100).roundToInt()
-            binding.usageText.text = "${formatDuration(item.usedMillis)} · $percent%"
+            binding.usageText.text = "${UsageTracker.formatDurationStatic(item.usedMillis)} · $percent%"
             binding.usageProgress.progress = percent
             binding.appIcon.setImageDrawable(
                 InstalledAppsHelper.getAppIcon(binding.root.context, item.packageName)
             )
-        }
-
-        private fun formatDuration(millis: Long): String {
-            val minutes = TimeUnit.MILLISECONDS.toMinutes(millis)
-            val hours = minutes / 60
-            val mins = minutes % 60
-            return if (hours > 0) "${hours}ч ${mins}мин" else "${mins}мин"
         }
     }
 

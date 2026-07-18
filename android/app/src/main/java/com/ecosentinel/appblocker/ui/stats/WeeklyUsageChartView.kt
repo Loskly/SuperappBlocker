@@ -8,6 +8,7 @@ import android.util.AttributeSet
 import android.view.View
 import androidx.core.content.ContextCompat
 import com.ecosentinel.appblocker.R
+import com.ecosentinel.appblocker.tracker.UsageTracker
 import kotlin.math.max
 
 class WeeklyUsageChartView @JvmOverloads constructor(
@@ -45,22 +46,27 @@ class WeeklyUsageChartView @JvmOverloads constructor(
         val paddingTop = valuePaint.textSize * 2f
         val chartHeight = height - paddingBottom - paddingTop
         val barWidth = width.toFloat() / (entries.size * 2f)
-        val maxMinutes = max(entries.maxOf { it.minutes }.toFloat(), 1f)
+        val maxMillis = max(entries.maxOf { it.millis }.toFloat(), 1f)
 
         entries.forEachIndexed { index, entry ->
             val centerX = barWidth + index * (barWidth * 2f)
-            val barHeight = (entry.minutes / maxMinutes) * chartHeight
+            val barHeight = (entry.millis / maxMillis) * chartHeight
             val left = centerX - barWidth * 0.7f
             val top = paddingTop + (chartHeight - barHeight)
             val right = centerX + barWidth * 0.7f
             val bottom = paddingTop + chartHeight
             canvas.drawRoundRect(RectF(left, top, right, bottom), 8f, 8f, barPaint)
             canvas.drawText(entry.label, centerX, height - labelPaint.textSize * 0.4f, labelPaint)
-            if (entry.minutes > 0) {
-                canvas.drawText("${entry.minutes}", centerX, top - 6f, valuePaint)
+            if (entry.millis > 0L) {
+                canvas.drawText(
+                    UsageTracker.formatDurationStatic(entry.millis),
+                    centerX,
+                    top - 6f,
+                    valuePaint
+                )
             }
         }
     }
 }
 
-data class ChartBarEntry(val label: String, val minutes: Long)
+data class ChartBarEntry(val label: String, val millis: Long)

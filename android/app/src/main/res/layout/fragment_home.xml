@@ -196,6 +196,98 @@
 
             android:textColor="@color/on_surface_variant" />
 
+        <com.google.android.material.textfield.TextInputLayout
+
+            android:layout_width="match_parent"
+
+            android:layout_height="wrap_content"
+
+            android:layout_marginTop="12dp"
+
+            android:hint="@string/remote_server_url">
+
+            <com.google.android.material.textfield.TextInputEditText
+
+                android:id="@+id/serverUrlInput"
+
+                android:layout_width="match_parent"
+
+                android:layout_height="wrap_content"
+
+                android:inputType="textUri"
+
+                android:maxLines="1" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.button.MaterialButton
+
+            android:id="@+id/btnSaveServerUrl"
+
+            style="@style/Widget.Appbllocker.Button.Outlined"
+
+            android:layout_width="match_parent"
+
+            android:layout_height="wrap_content"
+
+            android:layout_marginTop="8dp"
+
+            android:text="@string/remote_save_server" />
+
+        <TextView
+
+            android:id="@+id/remotePairingStatus"
+
+            android:layout_width="match_parent"
+
+            android:layout_height="wrap_content"
+
+            android:layout_marginTop="12dp"
+
+            android:textColor="@color/on_surface"
+
+            tools:text="Pairing: paired" />
+
+        <TextView
+
+            android:id="@+id/pairingExpiresText"
+
+            android:layout_width="match_parent"
+
+            android:layout_height="wrap_content"
+
+            android:layout_marginTop="4dp"
+
+            android:textColor="@color/on_surface_variant"
+
+            tools:text="Expires: 2026-07-18T10:00:00" />
+
+        <com.google.android.material.button.MaterialButton
+
+            android:id="@+id/btnStartPairing"
+
+            android:layout_width="match_parent"
+
+            android:layout_height="wrap_content"
+
+            android:layout_marginTop="8dp"
+
+            android:text="@string/remote_start_pairing" />
+
+        <com.google.android.material.button.MaterialButton
+
+            android:id="@+id/btnCheckPairing"
+
+            style="@style/Widget.Appbllocker.Button.Outlined"
+
+            android:layout_width="match_parent"
+
+            android:layout_height="wrap_content"
+
+            android:layout_marginTop="8dp"
+
+            android:text="@string/remote_check_pairing" />
+
 
 
         <com.google.android.material.button.MaterialButton

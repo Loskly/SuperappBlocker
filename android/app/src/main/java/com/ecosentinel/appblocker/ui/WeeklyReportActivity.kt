@@ -9,13 +9,13 @@ import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DiffUtil
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.ecosentinel.appblocker.R
 import com.ecosentinel.appblocker.databinding.ActivityWeeklyReportBinding
 import com.ecosentinel.appblocker.databinding.ItemStatsAppBinding
 import com.ecosentinel.appblocker.tracker.AppCategoryHelper
+import com.ecosentinel.appblocker.tracker.StatsDisplaySettings
 import com.ecosentinel.appblocker.tracker.UsageTracker
 import com.ecosentinel.appblocker.tracker.WeeklyAppUsageDetail
 import com.ecosentinel.appblocker.tracker.WeeklyUsageSummary
@@ -24,7 +24,6 @@ import com.ecosentinel.appblocker.ui.stats.ChartSliceEntry
 import com.ecosentinel.appblocker.util.InstalledAppsHelper
 import com.ecosentinel.appblocker.util.PermissionHelper
 import kotlinx.coroutines.launch
-import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -53,7 +52,7 @@ class WeeklyReportActivity : AppCompatActivity() {
         binding.btnUsageAccess.setOnClickListener {
             PermissionHelper.openUsageAccessSettings(this)
         }
-        binding.appsRecyclerView.layoutManager = LinearLayoutManager(this)
+        binding.appsRecyclerView.prepareForScrollParent(this)
         binding.appsRecyclerView.adapter = appsAdapter
 
         loadReport()
@@ -91,6 +90,8 @@ class WeeklyReportActivity : AppCompatActivity() {
     }
 
     private fun renderReport(report: WeeklyUsageSummary) {
+        val showHiddenSystem = StatsDisplaySettings.showHiddenSystemComponents(this)
+
         binding.totalTimeText.text = usageTracker.formatDuration(report.totalMillis)
         binding.averageDailyText.text = getString(
             R.string.weekly_report_average_daily,
@@ -117,7 +118,12 @@ class WeeklyReportActivity : AppCompatActivity() {
             )
         }
 
-        val topCategory = AppCategoryHelper.groupByCategory(this, report.byPackage).firstOrNull()
+        val topCategory = AppCategoryHelper.groupByCategory(
+            context = this,
+            usageByPackage = report.byPackage,
+            includeHiddenSystemComponents = showHiddenSystem,
+            hiddenSystemCategoryName = getString(R.string.stats_category_hidden_system)
+        ).firstOrNull()
         binding.topCategoryText.text = if (topCategory == null) {
             getString(R.string.stats_peak_unknown)
         } else {
@@ -137,12 +143,17 @@ class WeeklyReportActivity : AppCompatActivity() {
         val chartEntries = report.dailySummaries.map { summary ->
             ChartBarEntry(
                 label = summary.label,
-                minutes = TimeUnit.MILLISECONDS.toMinutes(summary.totalMillis)
+                millis = summary.totalMillis
             )
         }
         binding.weeklyChart.setData(chartEntries)
 
-        val categories = AppCategoryHelper.groupByCategory(this, report.byPackage)
+        val categories = AppCategoryHelper.groupByCategory(
+            context = this,
+            usageByPackage = report.byPackage,
+            includeHiddenSystemComponents = showHiddenSystem,
+            hiddenSystemCategoryName = getString(R.string.stats_category_hidden_system)
+        )
         val topCategories = categories.take(5)
         val otherMillis = categories.drop(5).sumOf { it.millis }
         val categoryEntries = topCategories.map { ChartSliceEntry(it.categoryName, it.millis) }.toMutableList()
@@ -151,8 +162,12 @@ class WeeklyReportActivity : AppCompatActivity() {
         }
         binding.categoryChart.setData(categoryEntries)
 
-        val apps = usageTracker.toWeeklyAppDetails(report.byPackage, report.dayCount).take(20)
-        appsAdapter.submitList(apps)
+        val apps = usageTracker.toWeeklyAppDetails(
+            report.byPackage,
+            report.dayCount,
+            showHiddenSystem
+        ).take(20)
+        appsAdapter.submitListRemeasure(binding.appsRecyclerView, apps)
         binding.emptyAppsText.visibility = if (apps.isEmpty()) View.VISIBLE else View.GONE
     }
 

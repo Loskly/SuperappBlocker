@@ -32,16 +32,17 @@ class FocusManager(context: Context) {
         }
 
         val now = System.currentTimeMillis()
-        dao.upsert(
-            FocusSessionEntity(
-                active = true,
-                mode = mode,
-                startedAtMillis = now,
-                expiresAtMillis = now + durationMinutes * 60_000L,
-                blockedCategoryIdsJson = blockedCategoryIds.toJsonArray(),
-                blockedPackagesJson = blockedPackages.toJsonArray()
-            )
+        val session = FocusSessionEntity(
+            active = true,
+            mode = mode,
+            startedAtMillis = now,
+            expiresAtMillis = now + durationMinutes * 60_000L,
+            blockedCategoryIdsJson = blockedCategoryIds.toJsonArray(),
+            blockedPackagesJson = blockedPackages.toJsonArray()
         )
+        dao.upsert(session)
+        FocusNotificationHelper.show(appContext, session)
+        FocusExpireScheduler.schedule(appContext, session.expiresAtMillis)
     }
 
     suspend fun stopFocus(): Boolean {
@@ -50,6 +51,8 @@ class FocusManager(context: Context) {
             return false
         }
         dao.upsert(session.copy(active = false))
+        FocusNotificationHelper.cancel(appContext)
+        FocusExpireScheduler.cancel(appContext)
         return true
     }
 
@@ -60,6 +63,8 @@ class FocusManager(context: Context) {
         }
         if (session.expiresAtMillis <= nowMillis) {
             dao.upsert(session.copy(active = false))
+            FocusNotificationHelper.cancel(appContext)
+            FocusExpireScheduler.cancel(appContext)
         }
     }
 

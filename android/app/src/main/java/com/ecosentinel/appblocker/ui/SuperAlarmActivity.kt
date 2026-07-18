@@ -12,7 +12,6 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DiffUtil
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.ecosentinel.appblocker.R
@@ -79,12 +78,12 @@ class SuperAlarmActivity : AppCompatActivity(), SuperAlarmEditDialog.Listener {
             PermissionHelper.openPermissionSettings(this, com.ecosentinel.appblocker.util.PermissionKind.NOTIFICATIONS)
         }
 
-        binding.alarmsRecyclerView.layoutManager = LinearLayoutManager(this)
+        binding.alarmsRecyclerView.prepareForScrollParent(this)
         binding.alarmsRecyclerView.adapter = adapter
 
         lifecycleScope.launch {
             alarmManager.observeAll().collectLatest { alarms ->
-                adapter.submitList(alarms)
+                adapter.submitListRemeasure(binding.alarmsRecyclerView, alarms)
                 binding.emptyAlarmsText.visibility =
                     if (alarms.isEmpty()) View.VISIBLE else View.GONE
             }
@@ -152,7 +151,7 @@ private class SuperAlarmAdapter(
             )
             binding.alarmSoundText.text = context.getString(
                 R.string.super_alarm_sound_value,
-                AlarmSoundHelper.displayName(context, alarm.soundUri)
+                AlarmSoundHelper.displayName(context, alarm.soundUri, alarm.soundDisplayName)
             )
 
             binding.enabledSwitch.setOnCheckedChangeListener(null)

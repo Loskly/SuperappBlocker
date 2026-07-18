@@ -2,6 +2,8 @@ package com.ecosentinel.appblocker.ui
 
 import android.content.Context
 import android.util.AttributeSet
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 
 /**
@@ -19,5 +21,23 @@ class FullHeightRecyclerView @JvmOverloads constructor(
             MeasureSpec.AT_MOST
         )
         super.onMeasure(widthSpec, expandedHeightSpec)
+    }
+}
+
+/** Standard setup when this list lives inside a [android.widget.ScrollView]. */
+fun FullHeightRecyclerView.prepareForScrollParent(context: Context) {
+    if (layoutManager == null) {
+        layoutManager = LinearLayoutManager(context)
+    }
+    isNestedScrollingEnabled = false
+    setHasFixedSize(false)
+}
+
+fun <T> ListAdapter<T, *>.submitListRemeasure(
+    recyclerView: FullHeightRecyclerView,
+    list: List<T>?
+) {
+    submitList(list) {
+        recyclerView.requestLayout()
     }
 }

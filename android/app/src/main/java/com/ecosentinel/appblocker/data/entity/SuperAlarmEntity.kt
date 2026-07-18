@@ -17,5 +17,7 @@ data class SuperAlarmEntity(
     val volumePercent: Int = 100,
     val volumeGuardEnabled: Boolean = true,
     /** Empty = system default alarm sound. */
-    val soundUri: String = ""
+    val soundUri: String = "",
+    /** Cached title at pick time; survives URI permission loss after reboot/hibernation. */
+    val soundDisplayName: String = ""
 )

@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.ecosentinel.appblocker.engine.BlockMode
 import com.ecosentinel.appblocker.engine.BlockModuleType
+import com.ecosentinel.appblocker.engine.RuleLockMode
 import com.ecosentinel.appblocker.engine.TargetType
 
 @Entity(tableName = "policy_rules")
@@ -17,7 +18,13 @@ data class PolicyRuleEntity(
     val blockMode: BlockMode,
     val enabled: Boolean,
     val scheduleJson: String?,
-    val metadataJson: String?
+    val metadataJson: String?,
+    val lockMode: RuleLockMode = RuleLockMode.NORMAL,
+    val lockUntilDayEndMillis: Long? = null,
+    val lockUntilCustomMillis: Long? = null,
+    val lockOnBlockActive: Boolean = false,
+    val lockDelayMinutes: Int? = null,
+    val lockDelayStartedAtMillis: Long? = null
 )
 
 @Entity(tableName = "usage_daily")

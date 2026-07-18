@@ -27,7 +27,7 @@
             android:textAppearance="?attr/textAppearanceBodyMedium"
             android:textColor="@color/on_surface_variant" />
 
-        <androidx.recyclerview.widget.RecyclerView
+        <com.ecosentinel.appblocker.ui.FullHeightRecyclerView
             android:id="@+id/featuresRecyclerView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

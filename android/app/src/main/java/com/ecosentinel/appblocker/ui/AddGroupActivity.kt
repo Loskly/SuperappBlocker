@@ -9,17 +9,19 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.ListAdapter
-import androidx.recyclerview.widget.RecyclerView
 import com.ecosentinel.appblocker.R
 import com.ecosentinel.appblocker.cooldown.CooldownManager
 import com.ecosentinel.appblocker.data.AppDatabase
 import com.ecosentinel.appblocker.data.entity.AppGroupEntity
+import com.ecosentinel.appblocker.data.entity.PolicyRuleEntity
 import com.ecosentinel.appblocker.databinding.ActivityAddGroupBinding
-import com.ecosentinel.appblocker.databinding.ItemFocusAppPickBinding
+import com.ecosentinel.appblocker.engine.BlockMode
+import com.ecosentinel.appblocker.engine.BlockSchedule
+import com.ecosentinel.appblocker.engine.RuleLockPolicy
+import com.ecosentinel.appblocker.engine.RuleLockReason
 import com.ecosentinel.appblocker.tracker.AppGroupHelper
+import com.ecosentinel.appblocker.tracker.UsageTracker
 import com.ecosentinel.appblocker.util.InstalledApp
 import com.ecosentinel.appblocker.util.InstalledAppsHelper
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -58,6 +60,7 @@ class AddGroupActivity : AppCompatActivity(), EditRuleDialog.Listener {
             } else {
                 selectedPackages.remove(packageName)
             }
+            applyFilter(binding.searchInput.text?.toString().orEmpty())
         }
 
         binding.btnBack.setOnClickListener { finish() }
@@ -172,9 +175,18 @@ class AddGroupActivity : AppCompatActivity(), EditRuleDialog.Listener {
                 it.label.lowercase().contains(query) || it.packageName.lowercase().contains(query)
             }
         }
-        appsAdapter.submitList(filtered)
+        val sorted = filtered.sortedForGroupPicker()
+        appsAdapter.submitList(sorted)
         binding.emptyAppsText.visibility =
-            if (filtered.isEmpty() && allApps.isNotEmpty()) View.VISIBLE else View.GONE
+            if (sorted.isEmpty() && allApps.isNotEmpty()) View.VISIBLE else View.GONE
+    }
+
+    private fun List<InstalledApp>.sortedForGroupPicker(): List<InstalledApp> {
+        return sortedWith(
+            compareBy<InstalledApp> { it.packageName !in selectedPackages }
+                .thenBy { it.label.lowercase() }
+                .thenBy { it.packageName.lowercase() }
+        )
     }
 
     private fun saveGroup() {
@@ -192,6 +204,16 @@ class AddGroupActivity : AppCompatActivity(), EditRuleDialog.Listener {
             val id = editingGroupId ?: UUID.randomUUID().toString()
             val dao = AppDatabase.getInstance(this@AddGroupActivity).appGroupDao()
             val isNewGroup = editingGroupId == null
+
+            if (!isNewGroup) {
+                val strictMessage = withContext(Dispatchers.IO) {
+                    lockedGroupRuleMessage(id)
+                }
+                if (strictMessage != null) {
+                    Toast.makeText(this@AddGroupActivity, strictMessage, Toast.LENGTH_LONG).show()
+                    return@launch
+                }
+            }
 
             withContext(Dispatchers.IO) {
                 val existing = if (!isNewGroup) dao.getById(id) else null
@@ -221,29 +243,121 @@ class AddGroupActivity : AppCompatActivity(), EditRuleDialog.Listener {
     private fun confirmDeleteGroup() {
         val id = editingGroupId ?: return
         val name = binding.groupNameInput.text?.toString()?.trim().orEmpty()
-        MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.delete_group)
-            .setMessage(getString(R.string.delete_group_confirm, name))
-            .setPositiveButton(R.string.delete_group) { _, _ ->
-                lifecycleScope.launch {
-                    withContext(Dispatchers.IO) {
-                        val db = AppDatabase.getInstance(this@AddGroupActivity)
-                        val ruleDao = db.policyRuleDao()
-                        val rules = ruleDao.getAllByGroupId(id)
-                        rules.forEach { rule ->
-                            ruleDao.deleteById(rule.id)
-                            CooldownManager(this@AddGroupActivity).clearForRule(rule.id)
+        lifecycleScope.launch {
+            val strictMessage = withContext(Dispatchers.IO) {
+                lockedGroupRuleMessage(id)
+            }
+            if (strictMessage != null) {
+                Toast.makeText(this@AddGroupActivity, strictMessage, Toast.LENGTH_LONG).show()
+                return@launch
+            }
+
+            MaterialAlertDialogBuilder(this@AddGroupActivity)
+                .setTitle(R.string.delete_group)
+                .setMessage(getString(R.string.delete_group_confirm, name))
+                .setPositiveButton(R.string.delete_group) { _, _ ->
+                    lifecycleScope.launch {
+                        withContext(Dispatchers.IO) {
+                            val db = AppDatabase.getInstance(this@AddGroupActivity)
+                            val ruleDao = db.policyRuleDao()
+                            val rules = ruleDao.getAllByGroupId(id)
+                            rules.forEach { rule ->
+                                ruleDao.deleteById(rule.id)
+                                CooldownManager(this@AddGroupActivity).clearForRule(rule.id)
+                            }
+                            db.appGroupDao().deleteMembersForGroup(id)
+                            db.appGroupDao().deleteById(id)
+                            AppGroupHelper.onGroupsChanged(this@AddGroupActivity)
                         }
-                        db.appGroupDao().deleteMembersForGroup(id)
-                        db.appGroupDao().deleteById(id)
-                        AppGroupHelper.onGroupsChanged(this@AddGroupActivity)
+                        setResult(RESULT_OK)
+                        showListPanel()
                     }
-                    setResult(RESULT_OK)
-                    showListPanel()
+                }
+                .setNegativeButton(R.string.cancel, null)
+                .show()
+        }
+    }
+
+    private suspend fun lockedGroupRuleMessage(groupId: String): String? {
+        val db = AppDatabase.getInstance(this@AddGroupActivity)
+        val ruleDao = db.policyRuleDao()
+        val rules = ruleDao.getAllByGroupId(groupId)
+        if (rules.isEmpty()) {
+            return null
+        }
+
+        val nowMillis = System.currentTimeMillis()
+        val usage = UsageTracker(this@AddGroupActivity).syncTodayUsage()
+        val activeCooldownRuleIds = db.cooldownStateDao()
+            .getActiveRuleIds(nowMillis)
+            .toSet()
+
+        for (rule in rules) {
+            val usedMillis = AppGroupHelper.aggregateUsageForGroup(
+                usage,
+                groupId,
+                packageName
+            )
+            val blockActive = isRuleBlockActive(
+                rule = rule,
+                usedMillis = usedMillis,
+                activeCooldownRuleIds = activeCooldownRuleIds
+            )
+
+            val delayStarted = RuleLockPolicy.shouldStartDelay(rule)
+            val checkedRule = if (delayStarted) {
+                rule.copy(lockDelayStartedAtMillis = nowMillis).also { ruleDao.upsert(it) }
+            } else {
+                rule
+            }
+            val state = RuleLockPolicy.evaluate(
+                rule = checkedRule,
+                nowMillis = nowMillis,
+                isBlockActive = blockActive
+            )
+            if (state.locked) {
+                val statusText = when (state.reason) {
+                    RuleLockReason.UNTIL_TIME -> getString(
+                        R.string.rule_lock_status_until,
+                        BlockSchedule.formatDurationUntil(state.remainingMillis)
+                    )
+                    RuleLockReason.BLOCK_ACTIVE -> getString(R.string.rule_lock_status_block_active)
+                    RuleLockReason.DELAY_NOT_STARTED -> getString(
+                        R.string.rule_lock_status_delay_not_started,
+                        BlockSchedule.formatDurationUntil(state.remainingMillis)
+                    )
+                    RuleLockReason.DELAY_WAITING -> getString(
+                        R.string.rule_lock_status_delay_waiting,
+                        BlockSchedule.formatDurationUntil(state.remainingMillis)
+                    )
+                    RuleLockReason.STRICT_WITHOUT_CONDITION -> getString(R.string.rule_lock_status_no_condition)
+                    RuleLockReason.NONE -> getString(R.string.rule_lock_status_no_condition)
+                }
+                return if (delayStarted) {
+                    "${getString(R.string.rule_lock_delay_started)} $statusText"
+                } else {
+                    statusText
                 }
             }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
+        }
+
+        return null
+    }
+
+    private fun isRuleBlockActive(
+        rule: PolicyRuleEntity,
+        usedMillis: Long,
+        activeCooldownRuleIds: Set<String>
+    ): Boolean {
+        return when (rule.blockMode) {
+            BlockMode.PERMANENT -> true
+            BlockMode.TIME_LIMIT -> {
+                val limitMinutes = rule.dailyLimitMinutes ?: return false
+                usedMillis >= limitMinutes * 60_000L
+            }
+            BlockMode.TIME_OF_DAY -> BlockSchedule.fromJson(rule.scheduleJson)?.isActiveNow() == true
+            BlockMode.COOLDOWN -> rule.id in activeCooldownRuleIds
+        }
     }
 
     private suspend fun groupToRow(group: AppGroupEntity): GroupRow {
@@ -261,50 +375,3 @@ data class GroupRow(
     val name: String,
     val appCount: Int
 )
-
-private class GroupAppPickAdapter(
-    private val selectedPackages: Set<String>,
-    private val onCheckedChanged: (packageName: String, checked: Boolean) -> Unit
-) : ListAdapter<InstalledApp, GroupAppPickAdapter.ViewHolder>(Diff) {
-
-    object Diff : DiffUtil.ItemCallback<InstalledApp>() {
-        override fun areItemsTheSame(oldItem: InstalledApp, newItem: InstalledApp) =
-            oldItem.packageName == newItem.packageName
-
-        override fun areContentsTheSame(oldItem: InstalledApp, newItem: InstalledApp) =
-            oldItem == newItem
-    }
-
-    inner class ViewHolder(
-        private val binding: ItemFocusAppPickBinding
-    ) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(app: InstalledApp) {
-            binding.appNameText.text = app.label
-            binding.packageText.text = app.packageName
-            binding.appIcon.setImageDrawable(
-                InstalledAppsHelper.getAppIcon(binding.root.context, app.packageName)
-            )
-            binding.appCheckBox.setOnCheckedChangeListener(null)
-            binding.appCheckBox.isChecked = app.packageName in selectedPackages
-            binding.appCheckBox.setOnCheckedChangeListener { _, isChecked ->
-                onCheckedChanged(app.packageName, isChecked)
-            }
-            binding.root.setOnClickListener {
-                binding.appCheckBox.isChecked = !binding.appCheckBox.isChecked
-            }
-        }
-    }
-
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val binding = ItemFocusAppPickBinding.inflate(
-            LayoutInflater.from(parent.context),
-            parent,
-            false
-        )
-        return ViewHolder(binding)
-    }
-
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(getItem(position))
-    }
-}

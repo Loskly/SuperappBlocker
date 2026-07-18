@@ -12,8 +12,8 @@ android {
         applicationId = "com.ecosentinel.appblocker"
         minSdk = 26
         targetSdk = 35
-        versionCode = 11
-        versionName = "1.7.1"
+        versionCode = 12
+        versionName = "1.8"
 
         buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:8000\"")
     }

@@ -41,4 +41,23 @@ internal object AccessibilityTreeScanner {
         }
         return keywords.any { keyword -> text.contains(keyword) }
     }
+
+    fun forEachNode(root: AccessibilityNodeInfo, action: (AccessibilityNodeInfo) -> Unit) {
+        action(root)
+        for (index in 0 until root.childCount) {
+            val child = root.getChild(index) ?: continue
+            try {
+                forEachNode(child, action)
+            } finally {
+                child.recycle()
+            }
+        }
+    }
+
+    fun anyViewIdContains(root: AccessibilityNodeInfo, fragments: Set<String>): Boolean {
+        return anyNodeMatches(root) { node ->
+            val viewId = viewId(node)
+            viewId.isNotEmpty() && fragments.any { viewId.contains(it) }
+        }
+    }
 }

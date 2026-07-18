@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.ecosentinel.appblocker.data.entity.AppGroupEntity
 import com.ecosentinel.appblocker.data.entity.AppGroupMemberEntity
+import com.ecosentinel.appblocker.data.entity.FoodEntryEntity
 import com.ecosentinel.appblocker.data.entity.FocusSessionEntity
 import com.ecosentinel.appblocker.data.entity.CooldownStateEntity
 import com.ecosentinel.appblocker.data.entity.OverrideStateEntity
@@ -191,6 +192,9 @@ interface CooldownStateDao {
 
     @Query("DELETE FROM cooldown_state WHERE blockedUntilMillis <= :nowMillis")
     suspend fun deleteExpired(nowMillis: Long)
+
+    @Query("SELECT ruleId FROM cooldown_state WHERE blockedUntilMillis > :nowMillis")
+    suspend fun getActiveRuleIds(nowMillis: Long): List<String>
 }
 
 @Dao
@@ -240,6 +244,46 @@ interface TodoDao {
     suspend fun upsert(todo: TodoEntity): Long
 
     @Query("DELETE FROM todo_items WHERE id = :id")
+    suspend fun deleteById(id: Long)
+}
+
+@Dao
+interface FoodEntryDao {
+    @Query(
+        """
+        SELECT * FROM food_entries
+        WHERE timestamp >= :dayStartMillis AND timestamp < :dayEndMillis
+        ORDER BY timestamp DESC
+        """
+    )
+    fun observeForDay(dayStartMillis: Long, dayEndMillis: Long): Flow<List<FoodEntryEntity>>
+
+    @Query(
+        """
+        SELECT COALESCE(SUM(calories), 0) FROM food_entries
+        WHERE timestamp >= :dayStartMillis AND timestamp < :dayEndMillis
+        """
+    )
+    fun observeTotalCaloriesForDay(dayStartMillis: Long, dayEndMillis: Long): Flow<Int>
+
+    @Query(
+        """
+        SELECT COALESCE(SUM(calories), 0) FROM food_entries
+        WHERE timestamp >= :dayStartMillis AND timestamp < :dayEndMillis
+        """
+    )
+    suspend fun sumCaloriesForDay(dayStartMillis: Long, dayEndMillis: Long): Int
+
+    @Query("SELECT * FROM food_entries ORDER BY timestamp DESC LIMIT :limit")
+    suspend fun getRecentEntries(limit: Int): List<FoodEntryEntity>
+
+    @Insert
+    suspend fun insert(entry: FoodEntryEntity): Long
+
+    @Query("SELECT * FROM food_entries WHERE id = :id LIMIT 1")
+    suspend fun getById(id: Long): FoodEntryEntity?
+
+    @Query("DELETE FROM food_entries WHERE id = :id")
     suspend fun deleteById(id: Long)
 }
 

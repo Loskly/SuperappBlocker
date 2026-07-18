@@ -10,7 +10,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DiffUtil
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.ecosentinel.appblocker.R
@@ -61,11 +60,7 @@ class AppPasswordActivity : AppCompatActivity(), SetPasswordDialog.Listener {
             addAppLauncher.launch(Intent(this, AddPasswordAppActivity::class.java))
         }
 
-        binding.protectedAppsRecyclerView.layoutManager = object : LinearLayoutManager(this) {
-            override fun canScrollVertically(): Boolean = false
-        }
-        binding.protectedAppsRecyclerView.isNestedScrollingEnabled = false
-        binding.protectedAppsRecyclerView.setHasFixedSize(false)
+        binding.protectedAppsRecyclerView.prepareForScrollParent(this)
         binding.protectedAppsRecyclerView.adapter = adapter
 
         setupUnlockModeSelection()
@@ -81,9 +76,7 @@ class AppPasswordActivity : AppCompatActivity(), SetPasswordDialog.Listener {
                             label = InstalledAppsHelper.getAppLabel(this@AppPasswordActivity, entity.packageName)
                         )
                     }
-                    adapter.submitList(rows) {
-                        binding.protectedAppsRecyclerView.requestLayout()
-                    }
+                    adapter.submitListRemeasure(binding.protectedAppsRecyclerView, rows)
                     binding.emptyAppsText.visibility =
                         if (rows.isEmpty()) View.VISIBLE else View.GONE
                 }

@@ -157,15 +157,6 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnShowAllSettings"
-            style="@style/Widget.Appbllocker.Button.Outlined"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="@string/in_app_feature_show_all"
-            android:visibility="gone" />
-
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

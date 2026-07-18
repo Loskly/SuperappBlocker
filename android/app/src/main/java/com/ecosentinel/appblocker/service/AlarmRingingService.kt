@@ -174,7 +174,7 @@ class AlarmRingingService : Service() {
 
     private fun startSound(alarm: SuperAlarmEntity) {
         stopSound()
-        val uri = AlarmSoundHelper.resolvePlaybackUri(alarm.soundUri)
+        val uri = AlarmSoundHelper.resolvePlaybackUri(applicationContext, alarm.soundUri)
             ?: AlarmSoundHelper.defaultSystemUri()
             ?: return
 
