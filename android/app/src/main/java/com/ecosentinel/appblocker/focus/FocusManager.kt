@@ -56,6 +56,17 @@ class FocusManager(context: Context) {
         return true
     }
 
+    suspend fun stopFocusFromRemote(): Boolean {
+        val session = dao.getSession() ?: return false
+        if (!session.active) {
+            return false
+        }
+        dao.upsert(session.copy(active = false))
+        FocusNotificationHelper.cancel(appContext)
+        FocusExpireScheduler.cancel(appContext)
+        return true
+    }
+
     suspend fun expireIfNeeded(nowMillis: Long = System.currentTimeMillis()) {
         val session = dao.getSession() ?: return
         if (!session.active) {

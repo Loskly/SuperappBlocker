@@ -27,7 +27,11 @@ import com.ecosentinel.appblocker.data.entity.PolicyRuleEntity
 import com.ecosentinel.appblocker.data.entity.UnlockGrantEntity
 import com.ecosentinel.appblocker.data.entity.SuperAlarmEntity
 import com.ecosentinel.appblocker.data.entity.TodoEntity
+import com.ecosentinel.appblocker.data.entity.SubtaskEntity
 import com.ecosentinel.appblocker.data.entity.UsageDailyEntity
+
+import com.ecosentinel.appblocker.data.entity.MotivationEntity
+import com.ecosentinel.appblocker.data.entity.ReportEntity
 
 @Database(
     entities = [
@@ -42,9 +46,12 @@ import com.ecosentinel.appblocker.data.entity.UsageDailyEntity
         AppGroupEntity::class,
         AppGroupMemberEntity::class,
         TodoEntity::class,
-        FoodEntryEntity::class
+        SubtaskEntity::class,
+        FoodEntryEntity::class,
+        MotivationEntity::class,
+        ReportEntity::class
     ],
-    version = 14,
+    version = 17,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -60,7 +67,10 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun superAlarmDao(): SuperAlarmDao
     abstract fun appGroupDao(): AppGroupDao
     abstract fun todoDao(): TodoDao
+    abstract fun subtaskDao(): com.ecosentinel.appblocker.data.dao.SubtaskDao
     abstract fun foodEntryDao(): FoodEntryDao
+    abstract fun motivationDao(): com.ecosentinel.appblocker.data.dao.MotivationDao
+    abstract fun reportDao(): com.ecosentinel.appblocker.data.dao.ReportDao
 
     companion object {
         @Volatile

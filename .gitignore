@@ -49,8 +49,8 @@ dashboard/.env
 dashboard/.env.*
 
 # Keep server/admin code local only (safe for future public repo)
-backend/
-dashboard/
+# backend/
+# dashboard/
 
 # Misc
 *.log

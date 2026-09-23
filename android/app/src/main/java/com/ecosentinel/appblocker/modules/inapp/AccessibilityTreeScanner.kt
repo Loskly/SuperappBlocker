@@ -8,18 +8,51 @@ internal object AccessibilityTreeScanner {
         root: AccessibilityNodeInfo,
         predicate: (AccessibilityNodeInfo) -> Boolean
     ): Boolean {
-        if (predicate(root)) {
-            return true
-        }
-        for (index in 0 until root.childCount) {
-            val child = root.getChild(index) ?: continue
-            try {
-                if (anyNodeMatches(child, predicate)) {
-                    return true
-                }
-            } finally {
-                child.recycle()
+        return anyNodeMatches(
+            root = root,
+            maxDepth = Int.MAX_VALUE,
+            maxNodes = Int.MAX_VALUE,
+            predicate = predicate
+        )
+    }
+
+    fun anyNodeMatches(
+        root: AccessibilityNodeInfo,
+        maxDepth: Int,
+        maxNodes: Int,
+        predicate: (AccessibilityNodeInfo) -> Boolean
+    ): Boolean {
+        var visited = 0
+
+        fun visit(node: AccessibilityNodeInfo, depth: Int): Boolean {
+            if (visited >= maxNodes) {
+                return false
             }
+            visited += 1
+            if (predicate(node)) {
+                return true
+            }
+            if (depth >= maxDepth) {
+                return false
+            }
+            for (index in 0 until node.childCount) {
+                val child = node.getChild(index) ?: continue
+                try {
+                    if (visit(child, depth + 1)) {
+                        return true
+                    }
+                } finally {
+                    child.recycle()
+                }
+            }
+            return false
+        }
+
+        if (maxDepth < 0 || maxNodes <= 0) {
+            return false
+        }
+        if (visit(root, depth = 0)) {
+            return true
         }
         return false
     }
@@ -43,15 +76,45 @@ internal object AccessibilityTreeScanner {
     }
 
     fun forEachNode(root: AccessibilityNodeInfo, action: (AccessibilityNodeInfo) -> Unit) {
-        action(root)
-        for (index in 0 until root.childCount) {
-            val child = root.getChild(index) ?: continue
-            try {
-                forEachNode(child, action)
-            } finally {
-                child.recycle()
+        forEachNode(
+            root = root,
+            maxDepth = Int.MAX_VALUE,
+            maxNodes = Int.MAX_VALUE,
+            action = action
+        )
+    }
+
+    fun forEachNode(
+        root: AccessibilityNodeInfo,
+        maxDepth: Int,
+        maxNodes: Int,
+        action: (AccessibilityNodeInfo) -> Unit
+    ) {
+        var visited = 0
+
+        fun visit(node: AccessibilityNodeInfo, depth: Int) {
+            if (visited >= maxNodes) {
+                return
+            }
+            visited += 1
+            action(node)
+            if (depth >= maxDepth) {
+                return
+            }
+            for (index in 0 until node.childCount) {
+                val child = node.getChild(index) ?: continue
+                try {
+                    visit(child, depth + 1)
+                } finally {
+                    child.recycle()
+                }
             }
         }
+
+        if (maxDepth < 0 || maxNodes <= 0) {
+            return
+        }
+        visit(root, depth = 0)
     }
 
     fun anyViewIdContains(root: AccessibilityNodeInfo, fragments: Set<String>): Boolean {

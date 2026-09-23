@@ -57,6 +57,17 @@
             android:textAppearance="@style/TextAppearance.Appbllocker.BlockMessage" />
 
         <TextView
+            android:id="@+id/motivationText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:gravity="center"
+            android:textStyle="italic"
+            android:textColor="?attr/colorError"
+            android:textAppearance="@style/TextAppearance.Appbllocker.BlockMessage"
+            tools:text="Твой конкурент сейчас работает." />
+
+        <TextView
             android:id="@+id/resetTimeText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

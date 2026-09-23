@@ -12,6 +12,7 @@ import android.view.WindowManager
 import android.widget.TextView
 import com.ecosentinel.appblocker.R
 import com.ecosentinel.appblocker.util.PermissionHelper
+import kotlinx.coroutines.launch
 
 object BlockOverlayManager {
 
@@ -109,6 +110,21 @@ object BlockOverlayManager {
 
         val resetView = view.findViewById<TextView>(R.id.resetTimeText)
         resetView.text = BlockOverlayTexts.footerForReason(context, packageName, reason)
+
+        val motivationView = view.findViewById<TextView>(R.id.motivationText)
+        motivationView.visibility = android.view.View.GONE // Default to gone while loading
+        
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
+            try {
+                val db = com.ecosentinel.appblocker.data.AppDatabase.getInstance(context)
+                val repo = com.ecosentinel.appblocker.data.repository.MotivationRepository(db.motivationDao())
+                val text = repo.getRandomMotivation()
+                motivationView.text = text
+                motivationView.visibility = android.view.View.VISIBLE
+            } catch (e: Exception) {
+                // Ignore if DB fails
+            }
+        }
 
         view.findViewById<android.view.View>(R.id.btnGoHome).setOnClickListener {
             val homeIntent = Intent(Intent.ACTION_MAIN).apply {

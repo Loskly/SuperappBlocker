@@ -29,6 +29,7 @@ internal object BlockOverlayTexts {
             BlockOverlayActivity.REASON_WEBSITE -> context.getString(R.string.block_message_website)
             BlockOverlayActivity.REASON_YOUTUBE_SHORTS -> context.getString(R.string.block_message_youtube_shorts)
             BlockOverlayActivity.REASON_INSTAGRAM_REELS -> context.getString(R.string.block_message_instagram_reels)
+            BlockOverlayActivity.REASON_BROWSER_INCOGNITO -> context.getString(R.string.block_message_browser_incognito)
             else -> context.getString(R.string.block_message_time_limit)
         }
     }
@@ -42,6 +43,7 @@ internal object BlockOverlayTexts {
             BlockOverlayActivity.REASON_WEBSITE -> context.getString(R.string.mode_website_block)
             BlockOverlayActivity.REASON_YOUTUBE_SHORTS -> context.getString(R.string.mode_youtube_shorts_block)
             BlockOverlayActivity.REASON_INSTAGRAM_REELS -> context.getString(R.string.mode_instagram_reels_block)
+            BlockOverlayActivity.REASON_BROWSER_INCOGNITO -> context.getString(R.string.mode_browser_incognito_block)
             BlockOverlayActivity.REASON_TIME_OF_DAY -> {
                 val schedule = findActiveRule(context, packageName, reason)?.scheduleJson?.let {
                     BlockSchedule.fromJson(it)

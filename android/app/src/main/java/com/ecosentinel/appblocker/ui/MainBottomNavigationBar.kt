@@ -25,6 +25,7 @@ class MainBottomNavigationBar @JvmOverloads constructor(
 
     private val tabs = listOf(
         Tab(R.id.nav_home, R.drawable.ic_nav_home, R.string.nav_home),
+        Tab(R.id.nav_settings, android.R.drawable.ic_menu_preferences, R.string.nav_settings),
         Tab(R.id.nav_limits, R.drawable.ic_nav_limits, R.string.nav_limits),
         Tab(R.id.nav_stats, R.drawable.ic_nav_stats, R.string.nav_stats),
         Tab(R.id.nav_todo, R.drawable.ic_nav_todo, R.string.nav_todo),

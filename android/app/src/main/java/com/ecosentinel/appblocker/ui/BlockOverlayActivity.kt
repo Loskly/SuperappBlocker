@@ -59,6 +59,7 @@ class BlockOverlayActivity : AppCompatActivity() {
         const val REASON_WEBSITE = "website"
         const val REASON_YOUTUBE_SHORTS = "youtube_shorts"
         const val REASON_INSTAGRAM_REELS = "instagram_reels"
+        const val REASON_BROWSER_INCOGNITO = "browser_incognito"
 
         fun launch(context: Context, packageName: String, reason: String) {
             val intent = Intent(context, BlockOverlayActivity::class.java).apply {

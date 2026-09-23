@@ -194,6 +194,61 @@ object DatabaseMigrations {
         }
     }
 
+    val MIGRATION_14_15 = object : Migration(14, 15) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "ALTER TABLE `policy_rules` ADD COLUMN `source` TEXT NOT NULL DEFAULT 'PHONE'"
+            )
+        }
+    }
+
+    val MIGRATION_15_16 = object : Migration(15, 16) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `motivations` (
+                    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    `text` TEXT NOT NULL,
+                    `isDefault` INTEGER NOT NULL
+                )
+                """.trimIndent()
+            )
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `reports` (
+                    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    `text` TEXT NOT NULL,
+                    `timestamp` INTEGER NOT NULL
+                )
+                """.trimIndent()
+            )
+        }
+    }
+
+    val MIGRATION_16_17 = object : Migration(16, 17) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `todo_items` ADD COLUMN `priority` INTEGER NOT NULL DEFAULT 0")
+            db.execSQL("ALTER TABLE `todo_items` ADD COLUMN `tags` TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE `todo_items` ADD COLUMN `recurrenceRule` TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE `todo_items` ADD COLUMN `unlockAppPackage` TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE `todo_items` ADD COLUMN `rewardMinutes` INTEGER NOT NULL DEFAULT 0")
+            db.execSQL("ALTER TABLE `todo_items` ADD COLUMN `isStrictBlock` INTEGER NOT NULL DEFAULT 0")
+
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `todo_subtasks` (
+                    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    `todoId` INTEGER NOT NULL,
+                    `title` TEXT NOT NULL,
+                    `completed` INTEGER NOT NULL,
+                    FOREIGN KEY(`todoId`) REFERENCES `todo_items`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                )
+                """.trimIndent()
+            )
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_todo_subtasks_todoId` ON `todo_subtasks` (`todoId`)")
+        }
+    }
+
     val ALL = arrayOf(
         MIGRATION_3_4,
         MIGRATION_4_5,
@@ -205,6 +260,9 @@ object DatabaseMigrations {
         MIGRATION_10_11,
         MIGRATION_11_12,
         MIGRATION_12_13,
-        MIGRATION_13_14
+        MIGRATION_13_14,
+        MIGRATION_14_15,
+        MIGRATION_15_16,
+        MIGRATION_16_17
     )
 }

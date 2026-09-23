@@ -14,6 +14,7 @@ import com.ecosentinel.appblocker.databinding.ActivityPermissionsBinding
 import com.ecosentinel.appblocker.survival.AppHealthChecker
 import com.ecosentinel.appblocker.survival.AppHealthSnapshot
 import com.ecosentinel.appblocker.survival.SurvivalManager
+import com.ecosentinel.appblocker.survival.SurvivalSettings
 import com.ecosentinel.appblocker.util.PermissionCheckItem
 import com.ecosentinel.appblocker.util.PermissionHelper
 import com.ecosentinel.appblocker.util.PermissionKind
@@ -75,7 +76,8 @@ class PermissionsActivity : AppCompatActivity() {
 
     private fun refreshList() {
         val snapshot = AppHealthChecker.check(this)
-        binding.survivalSummary.text = if (snapshot.protectionReady) {
+        val requiredIssues = SurvivalSettings.requiredIssues(this, snapshot)
+        binding.survivalSummary.text = if (requiredIssues.isEmpty()) {
             getString(R.string.survival_mode_ready)
         } else {
             getString(R.string.survival_mode_needs_action)
@@ -83,7 +85,7 @@ class PermissionsActivity : AppCompatActivity() {
         binding.survivalSummary.setTextColor(
             androidx.core.content.ContextCompat.getColor(
                 this,
-                if (snapshot.protectionReady) R.color.neon_primary else R.color.block_accent
+                if (requiredIssues.isEmpty()) R.color.neon_primary else R.color.block_accent
             )
         )
         survivalAdapter.submitListRemeasure(
@@ -129,11 +131,11 @@ class PermissionsActivity : AppCompatActivity() {
                 }
             }
             SurvivalAction.BATTERY_OPTIMIZATION -> PermissionHelper.requestIgnoreBatteryOptimizations(this)
-            SurvivalAction.BATTERY_SETTINGS -> PermissionHelper.openBatterySettings(this)
         }
     }
 
     private fun survivalStatusItems(snapshot: AppHealthSnapshot): List<SurvivalStatusItem> {
+        val accessibilityRequired = SurvivalSettings.isAccessibilityRequirementEnabled(this)
         return listOf(
             SurvivalStatusItem(
                 id = "monitor",
@@ -184,7 +186,11 @@ class PermissionsActivity : AppCompatActivity() {
                         R.string.survival_status_disabled
                     }
                 ),
-                level = if (snapshot.accessibilityEnabled) SurvivalStatusLevel.OK else SurvivalStatusLevel.WARNING,
+                level = when {
+                    snapshot.accessibilityEnabled -> SurvivalStatusLevel.OK
+                    accessibilityRequired -> SurvivalStatusLevel.WARNING
+                    else -> SurvivalStatusLevel.INFO
+                },
                 action = if (snapshot.accessibilityEnabled) null else SurvivalAction.ACCESSIBILITY
             ),
             SurvivalStatusItem(
@@ -228,32 +234,6 @@ class PermissionsActivity : AppCompatActivity() {
                     }
                 ),
                 level = if (snapshot.deviceOwner) SurvivalStatusLevel.OK else SurvivalStatusLevel.INFO,
-                action = null
-            ),
-            SurvivalStatusItem(
-                id = "power_save",
-                label = getString(R.string.survival_health_power_save),
-                statusText = getString(
-                    if (snapshot.powerSaveMode) {
-                        R.string.survival_status_power_save_on
-                    } else {
-                        R.string.survival_status_power_save_off
-                    }
-                ),
-                level = if (snapshot.powerSaveMode) SurvivalStatusLevel.WARNING else SurvivalStatusLevel.OK,
-                action = if (snapshot.powerSaveMode) SurvivalAction.BATTERY_SETTINGS else null
-            ),
-            SurvivalStatusItem(
-                id = "battery_low",
-                label = getString(R.string.survival_health_battery_low),
-                statusText = getString(
-                    if (snapshot.batteryLow) {
-                        R.string.survival_status_battery_low
-                    } else {
-                        R.string.survival_status_battery_ok
-                    }
-                ),
-                level = if (snapshot.batteryLow) SurvivalStatusLevel.WARNING else SurvivalStatusLevel.OK,
                 action = null
             )
         )
@@ -344,8 +324,7 @@ private enum class SurvivalAction(val buttonTextRes: Int) {
     OVERLAY(R.string.permission_grant_access),
     ACCESSIBILITY(R.string.permission_grant_access),
     NOTIFICATIONS(R.string.permission_grant_access),
-    BATTERY_OPTIMIZATION(R.string.permission_grant_access),
-    BATTERY_SETTINGS(R.string.permission_open_settings)
+    BATTERY_OPTIMIZATION(R.string.permission_grant_access)
 }
 
 private class SurvivalStatusAdapter(

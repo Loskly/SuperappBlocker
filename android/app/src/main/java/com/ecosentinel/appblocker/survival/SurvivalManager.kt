@@ -1,6 +1,7 @@
 package com.ecosentinel.appblocker.survival
 
 import android.content.Context
+import android.os.PowerManager
 import android.util.Log
 import com.ecosentinel.appblocker.alarm.AlarmScheduler
 import com.ecosentinel.appblocker.focus.FocusExpireScheduler
@@ -27,13 +28,14 @@ object SurvivalManager {
     const val REASON_PACKAGE_REPLACED = "package_replaced"
     const val REASON_SCREEN_ON = "screen_on"
     const val REASON_USER_PRESENT = "user_present"
-    const val REASON_BATTERY_LOW = "battery_low"
-    const val REASON_BATTERY_OKAY = "battery_okay"
     const val REASON_POWER_CONNECTED = "power_connected"
     const val REASON_POWER_DISCONNECTED = "power_disconnected"
     const val REASON_WATCHDOG = "watchdog"
     const val REASON_PERMISSIONS_SCREEN = "permissions_screen"
     const val REASON_MANUAL = "manual"
+    const val REASON_HEARTBEAT = "heartbeat"
+    const val REASON_CONTENT_PROVIDER = "content_provider"
+    const val REASON_ACCESSIBILITY_RECONNECTED = "accessibility_reconnected"
 
     private const val TAG = "SurvivalManager"
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -55,6 +57,7 @@ object SurvivalManager {
 
     suspend fun runCheckNow(context: Context, reason: String): AppHealthSnapshot = withContext(Dispatchers.Default) {
         val appContext = context.applicationContext
+        Log.i(TAG, "Survival check: reason=$reason")
         val beforeRestore = AppHealthChecker.check(appContext)
 
         restoreNotificationChannels(appContext)
@@ -65,11 +68,18 @@ object SurvivalManager {
             restoreSuperAlarms(appContext)
         }
 
+        // Schedule heartbeat alarm for continuous self-monitoring
+        safe("heartbeat alarm") {
+            HealthHeartbeatAlarm.schedule(appContext)
+        }
+
         val afterRestore = AppHealthChecker.check(appContext)
-        if (afterRestore.protectionReady) {
+        SurvivalAccessibilityOverlayManager.sync(appContext, afterRestore)
+        val notificationIssues = SurvivalSettings.notificationIssues(appContext, afterRestore)
+        if (notificationIssues.isEmpty()) {
             SurvivalNotificationHelper.cancelWarning(appContext)
         } else {
-            SurvivalNotificationHelper.showWarning(appContext, afterRestore)
+            SurvivalNotificationHelper.showWarning(appContext, notificationIssues)
         }
         afterRestore
     }
@@ -89,6 +99,7 @@ object SurvivalManager {
         safe("workers") {
             MonitorWatchdogWorker.schedule(context)
             WeeklyReportWorker.schedule(context)
+            com.ecosentinel.appblocker.service.ReportScheduler.checkAndRestore(context)
         }
     }
 
@@ -129,9 +140,9 @@ object SurvivalManager {
             REASON_APP_CREATE,
             REASON_BOOT_COMPLETED,
             REASON_PACKAGE_REPLACED,
-            REASON_BATTERY_OKAY,
             REASON_POWER_CONNECTED,
             REASON_POWER_DISCONNECTED,
+            REASON_HEARTBEAT,
             REASON_MANUAL
         )
     }

@@ -226,6 +226,7 @@ interface SuperAlarmDao {
 
 @Dao
 interface TodoDao {
+    @androidx.room.Transaction
     @Query(
         """
         SELECT * FROM todo_items
@@ -235,7 +236,10 @@ interface TodoDao {
             createdAtMillis DESC
         """
     )
-    fun observeAll(): Flow<List<TodoEntity>>
+    fun observeAllWithSubtasks(): Flow<List<com.ecosentinel.appblocker.data.entity.TodoWithSubtasks>>
+
+    @Query("SELECT * FROM todo_items WHERE isStrictBlock = 1 AND completed = 0")
+    suspend fun getStrictIncompleteTodos(): List<TodoEntity>
 
     @Query("SELECT * FROM todo_items WHERE id = :id LIMIT 1")
     suspend fun getById(id: Long): TodoEntity?
@@ -245,6 +249,18 @@ interface TodoDao {
 
     @Query("DELETE FROM todo_items WHERE id = :id")
     suspend fun deleteById(id: Long)
+}
+
+@Dao
+interface SubtaskDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(subtask: com.ecosentinel.appblocker.data.entity.SubtaskEntity): Long
+
+    @Query("DELETE FROM todo_subtasks WHERE id = :id")
+    suspend fun deleteById(id: Long)
+
+    @Query("DELETE FROM todo_subtasks WHERE todoId = :todoId")
+    suspend fun deleteByTodoId(todoId: Long)
 }
 
 @Dao

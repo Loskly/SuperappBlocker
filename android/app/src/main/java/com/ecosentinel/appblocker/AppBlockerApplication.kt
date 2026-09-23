@@ -11,6 +11,7 @@ import com.ecosentinel.appblocker.service.MonitorWatchdogWorker
 import com.ecosentinel.appblocker.service.WeeklyReportNotificationHelper
 import com.ecosentinel.appblocker.service.WeeklyReportWorker
 import com.ecosentinel.appblocker.survival.SurvivalManager
+import com.ecosentinel.appblocker.survival.HealthHeartbeatAlarm
 import com.ecosentinel.appblocker.sync.SyncWorker
 import com.ecosentinel.appblocker.util.WindowInsetsHelper
 import java.util.concurrent.TimeUnit
@@ -28,6 +29,7 @@ class AppBlockerApplication : Application() {
         MonitorWatchdogWorker.schedule(this)
         WeeklyReportWorker.schedule(this)
         MonitorBootstrap.ensureMonitoring(this)
+        HealthHeartbeatAlarm.schedule(this)
         SurvivalManager.runCheck(this, SurvivalManager.REASON_APP_CREATE)
     }
 

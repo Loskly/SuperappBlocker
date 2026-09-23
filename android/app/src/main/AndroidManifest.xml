@@ -119,6 +119,21 @@
             android:parentActivityName=".MainActivity" />
 
         <activity
+            android:name=".ui.IncognitoBlockActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".ui.MotivationsActivity"
+            android:label="Мотивашки и Отчёты"
+            android:theme="@style/Theme.Appbllocker" />
+
+        <activity
+            android:name=".ui.SurvivalModeActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
             android:name=".ui.SuperAlarmActivity"
             android:exported="false"
             android:parentActivityName=".MainActivity" />
@@ -143,6 +158,15 @@
 
         <activity
             android:name=".ui.BlockOverlayActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:showOnLockScreen="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.Appbllocker.BlockOverlay" />
+
+        <activity
+            android:name=".ui.SurvivalAccessibilityOverlayActivity"
             android:excludeFromRecents="true"
             android:exported="false"
             android:launchMode="singleTask"
@@ -202,6 +226,22 @@
         </receiver>
 
         <receiver
+            android:name=".receiver.HeartbeatReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.ecosentinel.appblocker.ACTION_HEARTBEAT" />
+            </intent-filter>
+        </receiver>
+        
+        <receiver
+            android:name=".receiver.ReportReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.ecosentinel.appblocker.ACTION_REPORT_TRIGGER" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
             android:name=".receiver.BootReceiver"
             android:enabled="true"
             android:exported="true">
@@ -216,13 +256,17 @@
             android:enabled="true"
             android:exported="false">
             <intent-filter>
-                <action android:name="android.intent.action.BATTERY_LOW" />
-                <action android:name="android.intent.action.BATTERY_OKAY" />
                 <action android:name="android.intent.action.POWER_CONNECTED" />
                 <action android:name="android.intent.action.POWER_DISCONNECTED" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
+
+
+        <provider
+            android:name=".survival.SurvivalContentProvider"
+            android:authorities="${applicationId}.survival"
+            android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

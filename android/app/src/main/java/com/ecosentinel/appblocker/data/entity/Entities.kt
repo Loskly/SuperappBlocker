@@ -24,7 +24,8 @@ data class PolicyRuleEntity(
     val lockUntilCustomMillis: Long? = null,
     val lockOnBlockActive: Boolean = false,
     val lockDelayMinutes: Int? = null,
-    val lockDelayStartedAtMillis: Long? = null
+    val lockDelayStartedAtMillis: Long? = null,
+    val source: String = "PHONE"
 )
 
 @Entity(tableName = "usage_daily")

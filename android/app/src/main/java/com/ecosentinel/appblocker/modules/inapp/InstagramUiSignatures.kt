@@ -8,8 +8,6 @@ object InstagramUiSignatures {
     val PLAYER_VIEW_ID_FRAGMENTS = setOf(
         "clips_viewer",
         "clips_video",
-        "reel_viewer",
-        "reels_viewer",
         "clips_component",
         "ig_reels",
         "reels_media",
@@ -34,8 +32,7 @@ object InstagramUiSignatures {
     )
 
     val WINDOW_CLASS_FRAGMENTS = setOf(
-        "clips",
-        "reel"
+        "clips"
     )
 
     val WINDOW_CLASS_EXCLUDE_FRAGMENTS = setOf(

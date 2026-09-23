@@ -33,7 +33,11 @@ object SurvivalNotificationHelper {
         manager.createNotificationChannel(channel)
     }
 
-    fun showWarning(context: Context, snapshot: AppHealthSnapshot) {
+    fun showWarning(context: Context, issues: List<AppHealthIssue>) {
+        if (issues.isEmpty()) {
+            cancelWarning(context)
+            return
+        }
         createChannel(context)
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
         val pendingIntent = PendingIntent.getActivity(
@@ -43,7 +47,7 @@ object SurvivalNotificationHelper {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val issueText = snapshot.issues
+        val issueText = issues
             .take(4)
             .joinToString(" • ") { context.getString(it.labelRes) }
             .ifBlank { context.getString(R.string.survival_notification_text) }

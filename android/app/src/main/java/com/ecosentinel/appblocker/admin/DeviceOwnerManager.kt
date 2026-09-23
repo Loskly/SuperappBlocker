@@ -51,6 +51,12 @@ object DeviceOwnerManager {
             }
         }
 
+        // Disable battery saver / power saving mode
+        try {
+            dpm.setGlobalSetting(admin, "low_power", "0")
+        } catch (_: Exception) {
+        }
+
         try {
             dpm.setGlobalSetting(
                 admin,

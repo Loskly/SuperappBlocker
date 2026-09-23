@@ -44,6 +44,15 @@ class FeaturesFragment : Fragment() {
                 FEATURE_SHORTS_REELS -> {
                     startActivity(Intent(requireContext(), InAppFeatureBlockActivity::class.java))
                 }
+                FEATURE_INCOGNITO_BLOCK -> {
+                    startActivity(Intent(requireContext(), IncognitoBlockActivity::class.java))
+                }
+                FEATURE_SURVIVAL_MODE -> {
+                    startActivity(Intent(requireContext(), SurvivalModeActivity::class.java))
+                }
+                FEATURE_MOTIVATIONS -> {
+                    startActivity(Intent(requireContext(), MotivationsActivity::class.java))
+                }
             }
         }
         binding.featuresRecyclerView.prepareForScrollParent(requireContext())
@@ -63,10 +72,28 @@ class FeaturesFragment : Fragment() {
                     iconRes = R.drawable.ic_feature_shorts_reels
                 ),
                 FeatureItem(
+                    id = FEATURE_INCOGNITO_BLOCK,
+                    title = getString(R.string.feature_incognito_block_title),
+                    description = getString(R.string.feature_incognito_block_desc),
+                    iconRes = R.drawable.ic_block_lock
+                ),
+                FeatureItem(
+                    id = FEATURE_SURVIVAL_MODE,
+                    title = getString(R.string.feature_survival_mode_title),
+                    description = getString(R.string.feature_survival_mode_desc),
+                    iconRes = R.drawable.ic_stat_monitor
+                ),
+                FeatureItem(
                     id = FEATURE_SUPER_ALARM,
                     title = getString(R.string.feature_super_alarm_title),
                     description = getString(R.string.feature_super_alarm_desc),
                     iconRes = R.drawable.ic_feature_alarm
+                ),
+                FeatureItem(
+                    id = FEATURE_MOTIVATIONS,
+                    title = "Мотивашки и Отчёты",
+                    description = "Токсичная мотивация на экране блока и регулярные отчёты",
+                    iconRes = android.R.drawable.ic_menu_edit
                 ),
                 FeatureItem(
                     id = FEATURE_FOCUS,
@@ -96,6 +123,9 @@ class FeaturesFragment : Fragment() {
         const val FEATURE_SUPER_ALARM = "super_alarm"
         const val FEATURE_ADULT_FILTER = "adult_filter"
         const val FEATURE_SHORTS_REELS = "shorts_reels"
+        const val FEATURE_INCOGNITO_BLOCK = "incognito_block"
+        const val FEATURE_SURVIVAL_MODE = "survival_mode"
+        const val FEATURE_MOTIVATIONS = "motivations"
     }
 }
 

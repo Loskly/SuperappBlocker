@@ -18,7 +18,8 @@ class BlockModuleRegistry(context: Context) {
         InAppFeatureModule(context),
         AdultContentModule(context),
         TaskGateModule(),
-        FriendPasswordModule()
+        FriendPasswordModule(),
+        com.ecosentinel.appblocker.modules.todo.StrictTodoModule(context)
     )
 
     fun enabledModules(): List<BlockModule> = modules.filter { it.enabled }

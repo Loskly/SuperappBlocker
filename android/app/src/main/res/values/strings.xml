@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Appbllocker</string>
     <string name="monitor_notification_title">Мониторинг активен</string>
@@ -46,20 +46,14 @@
     <string name="survival_mode_needs_action">Survival Mode: нужны действия</string>
     <string name="survival_run_check">Проверить и восстановить</string>
     <string name="survival_action_restore">Восстановить</string>
-    <string name="survival_health_power_save">Энергосбережение</string>
-    <string name="survival_health_battery_low">Критически низкий заряд</string>
     <string name="survival_status_running">Работает</string>
     <string name="survival_status_stopped">Остановлен</string>
     <string name="survival_status_enabled">Включено</string>
     <string name="survival_status_disabled">Выключено</string>
-    <string name="survival_status_ignored">Исключено</string>
+    <string name="survival_status_ignored">РСЃРєР»СЋС‡РµРЅРѕ</string>
     <string name="survival_status_not_ignored">Оптимизация активна</string>
     <string name="survival_status_active">Активен</string>
     <string name="survival_status_device_owner_optional">Не активен (усиление позже)</string>
-    <string name="survival_status_power_save_on">Включено</string>
-    <string name="survival_status_power_save_off">Выключено</string>
-    <string name="survival_status_battery_low">Низкий заряд</string>
-    <string name="survival_status_battery_ok">Заряд нормальный</string>
     <string name="status_autostart">Автозапуск</string>
     <string name="stayfree_accessibility_title">Расширение функционала Stayfree</string>
     <string name="stayfree_accessibility_desc">Расширяет возможности Stayfree: контроль сайтов в браузерах, блокировка Shorts и Reels в приложениях, фильтры контента и другие функции, которые требуют доступа к содержимому экрана. Список возможностей будет пополняться.</string>
@@ -67,7 +61,7 @@
     <string name="stayfree_accessibility_required">Для этой функции включите «Расширение функционала Stayfree» в настройках Android.</string>
     <string name="setup_all_permissions">Настроить все разрешения</string>
     <string name="grant_notification_access">Разрешить уведомления</string>
-    <string name="grant_battery_access">Исключить из оптимизации батареи</string>
+    <string name="grant_battery_access">РСЃРєР»СЋС‡РёС‚СЊ РёР· РѕРїС‚РёРјРёР·Р°С†РёРё Р±Р°С‚Р°СЂРµРё</string>
     <string name="grant_autostart_access">Разрешить автозапуск</string>
     <string name="monitor_always_on">Всегда включён</string>
     <string name="monitor_waiting_permissions">Ожидание разрешений</string>
@@ -107,7 +101,7 @@
     <string name="website_domain_hint">Домен сайта</string>
     <string name="continue_action">Продолжить</string>
     <string name="create_group">Создать группу</string>
-    <string name="edit_group">Изменить</string>
+    <string name="edit_group">РР·РјРµРЅРёС‚СЊ</string>
     <string name="delete_group">Удалить группу</string>
     <string name="delete_group_confirm">Удалить группу «%1$s» и все её правила?</string>
     <string name="group_name_hint">Название группы</string>
@@ -129,7 +123,7 @@
     <string name="rule_group_usage_today">Сегодня группа: %1$s</string>
     <string name="rule_website_usage">Блокировка в браузере</string>
     <string name="website_mode_not_supported">Для сайтов доступны только постоянная блокировка и блокировка по времени суток</string>
-    <string name="edit_rule">Изменить</string>
+    <string name="edit_rule">РР·РјРµРЅРёС‚СЊ</string>
     <string name="delete_rule">Удалить</string>
     <string name="delete_rule_confirm">Удалить правило для %1$s?</string>
     <string name="rule_lock_mode_title">Режим правила</string>
@@ -174,7 +168,7 @@
     <string name="schedule_end">Конец</string>
     <string name="schedule_start_value">Начало: %1$s</string>
     <string name="schedule_end_value">Конец: %1$s</string>
-    <string name="schedule_preview">Интервал: %1$s</string>
+    <string name="schedule_preview">РРЅС‚РµСЂРІР°Р»: %1$s</string>
     <string name="schedule_required">Укажите разное время начала и конца</string>
     <string name="block_message_time_of_day">Сейчас время блокировки для этого приложения.</string>
     <string name="block_unlock_in">Разблокировка через %1$s</string>
@@ -253,10 +247,10 @@
     <string name="category_other">Другое</string>
 
     <plurals name="weekly_report_active_apps">
-        <item quantity="one">Использовали %d приложение</item>
-        <item quantity="few">Использовали %d приложения</item>
-        <item quantity="many">Использовали %d приложений</item>
-        <item quantity="other">Использовали %d приложений</item>
+        <item quantity="one">РСЃРїРѕР»СЊР·РѕРІР°Р»Рё %d РїСЂРёР»РѕР¶РµРЅРёРµ</item>
+        <item quantity="few">РСЃРїРѕР»СЊР·РѕРІР°Р»Рё %d РїСЂРёР»РѕР¶РµРЅРёСЏ</item>
+        <item quantity="many">РСЃРїРѕР»СЊР·РѕРІР°Р»Рё %d РїСЂРёР»РѕР¶РµРЅРёР№</item>
+        <item quantity="other">РСЃРїРѕР»СЊР·РѕРІР°Р»Рё %d РїСЂРёР»РѕР¶РµРЅРёР№</item>
     </plurals>
 
     <string name="app_stats_today">Сегодня</string>
@@ -349,7 +343,7 @@
     <string name="app_password_status_set">PIN установлен</string>
     <string name="app_password_status_not_set">PIN не установлен</string>
     <string name="app_password_set">Установить PIN</string>
-    <string name="app_password_change">Изменить PIN</string>
+    <string name="app_password_change">РР·РјРµРЅРёС‚СЊ PIN</string>
     <string name="app_password_pin">PIN (4–6 цифр)</string>
     <string name="app_password_pin_confirm">Подтвердите PIN</string>
     <string name="app_password_pin_too_short">PIN должен содержать минимум 4 цифры</string>
@@ -398,6 +392,21 @@
     <string name="mode_website_block">Блокировка сайта</string>
     <string name="feature_shorts_reels_title">Блокировка Shorts и Reels</string>
     <string name="feature_shorts_reels_desc">YouTube Shorts и Instagram Reels на одном экране</string>
+    <string name="feature_incognito_block_title">Блокировка инкогнито</string>
+    <string name="feature_incognito_block_desc">Блокирует приватный режим в выбранных браузерах</string>
+    <string name="feature_survival_mode_title">Survival mode</string>
+    <string name="feature_survival_mode_desc">Контроль восстановления защиты и требования спецвозможностей</string>
+    <string name="survival_feature_hint">Настройки поведения Appbllocker, когда Android отключает важные разрешения или часть защиты после энергосбережения.</string>
+    <string name="survival_require_accessibility_title">Требовать спец возможности</string>
+    <string name="survival_require_accessibility_desc">Если расширение Stayfree отключено, Appbllocker будет требовать вернуть доступ к спецвозможностям.</string>
+    <string name="survival_accessibility_mode_title">Как требовать доступ</string>
+    <string name="survival_accessibility_mode_notification">Просто отправлять уведомления</string>
+    <string name="survival_accessibility_mode_overlay">Показывать overlay до включения</string>
+    <string name="survival_accessibility_mode_hint">Overlay открывает настройки спецвозможностей и возвращается, если доступ так и не включен.</string>
+    <string name="survival_accessibility_overlay_title">Нужно включить спецвозможности</string>
+    <string name="survival_accessibility_overlay_message">Включите расширение Stayfree, чтобы Appbllocker снова видел экран и мог блокировать выбранные функции.</string>
+    <string name="survival_accessibility_overlay_button">Открыть настройки спецвозможностей</string>
+    <string name="survival_accessibility_overlay_footer">Этот экран будет возвращаться, пока доступ не включен.</string>
     <string name="feature_youtube_shorts_title">Блокировка YouTube Shorts</string>
     <string name="feature_youtube_shorts_desc">Блокирует Shorts во вкладке, в ленте и других разделах YouTube</string>
     <string name="feature_instagram_reels_title">Блокировка Instagram Reels</string>
@@ -414,6 +423,18 @@
     <string name="block_message_instagram_reels">Instagram Reels заблокированы по вашему правилу.</string>
     <string name="mode_youtube_shorts_block">Блокировка Shorts</string>
     <string name="mode_instagram_reels_block">Блокировка Reels</string>
+    <string name="incognito_block_title">Блокировка инкогнито</string>
+    <string name="incognito_block_hint">Включите функцию и выберите браузеры. Appbllocker будет реагировать на признаки приватной вкладки через расширение Stayfree.</string>
+    <string name="incognito_block_enabled">Блокировать приватный режим</string>
+    <string name="incognito_block_choose_browsers">Выберите браузеры</string>
+    <string name="incognito_block_no_browsers">Поддерживаемые браузеры не установлены</string>
+    <string name="incognito_block_browser_subtitle">%1$s · %2$s</string>
+    <string name="incognito_block_try">Проверить блокировку</string>
+    <string name="incognito_block_limitations">Ограничения: Accessibility видит только доступные элементы интерфейса браузера. Если браузер скрывает состояние приватной вкладки, блокировка может сработать не сразу или не сработать.</string>
+    <string name="browser_chrome">Chrome</string>
+    <string name="browser_firefox">Firefox</string>
+    <string name="block_message_browser_incognito">Приватный режим браузера заблокирован.</string>
+    <string name="mode_browser_incognito_block">Блокировка инкогнито</string>
     <string name="super_alarm_hint">Создайте один или несколько будильников. Чтобы выключить звонок, нужно решить арифметический пример.</string>
     <string name="super_alarm_add">Добавить будильник</string>
     <string name="super_alarm_empty">Нет будильников. Нажмите «Добавить будильник».</string>
@@ -468,4 +489,12 @@
     <string name="super_alarm_sound_reset">Вернуть системную</string>
     <string name="super_alarm_sound_value">Мелодия: %1$s</string>
     <string name="super_alarm_sound_pick_title">Выбор мелодии</string>
+    <string name="remote_pairing_connected">Подключено к компьютеру</string>
+    <string name="remote_pairing_waiting_dashboard">Код создан. Введите его в dashboard на компьютере</string>
+    <string name="dashboard_changes_button">!</string>
+    <string name="dashboard_changes_title">РР·РјРµРЅРµРЅРёСЏ СЃ dashboard</string>
+    <string name="dashboard_changes_empty">Пока нет изменений с компьютера</string>
+    <string name="dashboard_changes_close">Закрыть</string>
+    <string name="nav_settings">Настройки</string>
 </resources>
+

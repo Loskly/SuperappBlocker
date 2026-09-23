@@ -70,6 +70,26 @@ class TodoEditDialog : DialogFragment() {
         binding.titleInput.setText(requireArguments().getString(ARG_TITLE).orEmpty())
         binding.noteInput.setText(requireArguments().getString(ARG_NOTE).orEmpty())
 
+        val priorities = arrayOf("Low", "Medium", "High")
+        val priorityAdapter = android.widget.ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, priorities)
+        priorityAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        binding.spinnerPriority.adapter = priorityAdapter
+        binding.spinnerPriority.setSelection(requireArguments().getInt(ARG_PRIORITY, 0))
+        
+        binding.tagsInput.setText(requireArguments().getString(ARG_TAGS).orEmpty())
+        binding.switchStrictBlock.isChecked = requireArguments().getBoolean(ARG_STRICT, false)
+
+        val recurrences = arrayOf("NONE", "DAILY", "WEEKLY")
+        val recurrenceAdapter = android.widget.ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, recurrences)
+        recurrenceAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        binding.spinnerRecurrence.adapter = recurrenceAdapter
+        val reqRecurrence = requireArguments().getString(ARG_RECURRENCE).orEmpty()
+        binding.spinnerRecurrence.setSelection(if (reqRecurrence == "DAILY") 1 else if (reqRecurrence == "WEEKLY") 2 else 0)
+
+        binding.rewardAppInput.setText(requireArguments().getString(ARG_REWARD_APP).orEmpty())
+        val reqRewardMinutes = requireArguments().getInt(ARG_REWARD_MINUTES, 0)
+        binding.rewardMinutesInput.setText(if (reqRewardMinutes > 0) reqRewardMinutes.toString() else "")
+
         if (dueEnabled && dueYear == 0) {
             val now = Calendar.getInstance()
             dueYear = now.get(Calendar.YEAR)
@@ -201,6 +221,10 @@ class TodoEditDialog : DialogFragment() {
         val dueAtMillis = buildDueAtMillis()
         val wasCompleted = requireArguments().getBoolean(ARG_COMPLETED, false)
 
+        val reqRecurrenceStr = binding.spinnerRecurrence.selectedItem.toString()
+        val recurrenceRule = if (reqRecurrenceStr == "NONE") "" else reqRecurrenceStr
+        val rewardMinutes = binding.rewardMinutesInput.text?.toString()?.toIntOrNull() ?: 0
+
         val todo = TodoEntity(
             id = todoId,
             title = title,
@@ -208,7 +232,13 @@ class TodoEditDialog : DialogFragment() {
             dueAtMillis = dueAtMillis,
             completed = wasCompleted,
             createdAtMillis = requireArguments().getLong(ARG_CREATED_AT, System.currentTimeMillis()),
-            completedAtMillis = requireArguments().getLong(ARG_COMPLETED_AT, 0L)
+            completedAtMillis = requireArguments().getLong(ARG_COMPLETED_AT, 0L),
+            priority = binding.spinnerPriority.selectedItemPosition,
+            tags = binding.tagsInput.text?.toString()?.trim().orEmpty(),
+            isStrictBlock = binding.switchStrictBlock.isChecked,
+            recurrenceRule = recurrenceRule,
+            unlockAppPackage = binding.rewardAppInput.text?.toString()?.trim().orEmpty(),
+            rewardMinutes = rewardMinutes
         )
 
         (parentFragment as? Listener ?: activity as? Listener)?.onTodoSaved(todo)
@@ -228,6 +258,12 @@ class TodoEditDialog : DialogFragment() {
         private const val ARG_COMPLETED = "completed"
         private const val ARG_CREATED_AT = "created_at"
         private const val ARG_COMPLETED_AT = "completed_at"
+        private const val ARG_PRIORITY = "priority"
+        private const val ARG_TAGS = "tags"
+        private const val ARG_STRICT = "strict"
+        private const val ARG_RECURRENCE = "recurrence"
+        private const val ARG_REWARD_APP = "reward_app"
+        private const val ARG_REWARD_MINUTES = "reward_minutes"
 
         fun newInstance(todo: TodoEntity? = null): TodoEditDialog {
             return TodoEditDialog().apply {
@@ -239,6 +275,12 @@ class TodoEditDialog : DialogFragment() {
                         putBoolean(ARG_COMPLETED, todo.completed)
                         putLong(ARG_CREATED_AT, todo.createdAtMillis)
                         putLong(ARG_COMPLETED_AT, todo.completedAtMillis)
+                        putInt(ARG_PRIORITY, todo.priority)
+                        putString(ARG_TAGS, todo.tags)
+                        putBoolean(ARG_STRICT, todo.isStrictBlock)
+                        putString(ARG_RECURRENCE, todo.recurrenceRule)
+                        putString(ARG_REWARD_APP, todo.unlockAppPackage)
+                        putInt(ARG_REWARD_MINUTES, todo.rewardMinutes)
                         if (todo.dueAtMillis > 0L) {
                             val cal = Calendar.getInstance().apply { timeInMillis = todo.dueAtMillis }
                             putBoolean(ARG_DUE_ENABLED, true)

@@ -37,7 +37,7 @@ class PairingApi(context: Context) {
             val response = moshi.adapter(PairingStartResponse::class.java).fromJson(responseBody)
                 ?: return PairingActionResult(false, "Pairing response is empty")
             tokenStore.savePendingPairing(response.pairingCode, response.expiresAt)
-            PairingActionResult(true, "Pairing code: ${response.pairingCode}")
+            PairingActionResult(true, "Pairing code: ${response.pairingCode}", pending = true)
         } catch (e: Exception) {
             PairingActionResult(false, e.message ?: "Pairing failed")
         }
@@ -70,7 +70,7 @@ class PairingApi(context: Context) {
                         PairingActionResult(true, "Device paired")
                     }
                 }
-                "PENDING" -> PairingActionResult(false, "Waiting for dashboard confirmation")
+                "PENDING" -> PairingActionResult(false, "Waiting for dashboard confirmation", pending = true)
                 "EXPIRED" -> {
                     tokenStore.clearPendingPairing()
                     PairingActionResult(false, "Pairing code expired")
@@ -124,7 +124,8 @@ class PairingApi(context: Context) {
 
     data class PairingActionResult(
         val success: Boolean,
-        val message: String
+        val message: String,
+        val pending: Boolean = false
     )
 
     companion object {

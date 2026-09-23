@@ -12,11 +12,8 @@ import com.ecosentinel.appblocker.util.PermissionHelper
 
 object AppHealthChecker {
 
-    private const val BATTERY_LOW_PERCENT = 15
-
     fun check(context: Context): AppHealthSnapshot {
         val appContext = context.applicationContext
-        val powerManager = appContext.getSystemService<PowerManager>()
 
         return AppHealthSnapshot(
             monitorRunning = UsageMonitorService.isRunning(appContext),
@@ -25,22 +22,7 @@ object AppHealthChecker {
             accessibilityEnabled = PermissionHelper.isAccessibilityServiceEnabled(appContext),
             notificationGranted = PermissionHelper.hasNotificationPermission(appContext),
             batteryOptimizationIgnored = PermissionHelper.isIgnoringBatteryOptimizations(appContext),
-            deviceOwner = runCatching { DeviceOwnerManager.isDeviceOwner(appContext) }.getOrDefault(false),
-            powerSaveMode = powerManager?.isPowerSaveMode == true,
-            batteryLow = isBatteryLow(appContext)
+            deviceOwner = runCatching { DeviceOwnerManager.isDeviceOwner(appContext) }.getOrDefault(false)
         )
-    }
-
-    private fun isBatteryLow(context: Context): Boolean {
-        val batteryIntent = context.registerReceiver(
-            null,
-            IntentFilter(Intent.ACTION_BATTERY_CHANGED)
-        ) ?: return false
-        val level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
-        val scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
-        if (level < 0 || scale <= 0) {
-            return false
-        }
-        return level * 100 / scale <= BATTERY_LOW_PERCENT
     }
 }
